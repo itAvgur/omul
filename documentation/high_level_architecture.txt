@@ -1,0 +1,27 @@
+### **NexaShop High-Level Architecture**:
+
+1. **Frontend**:
+   - **Vue.js Application**: A single-page application (SPA) built using Vue.js for interactive and responsive user experience. This will interact with the backend through RESTful APIs.
+
+2. **Backend**:
+   - **API Layer**: Spring Boot application developed in Kotlin. This will expose the RESTful APIs that the frontend interacts with.
+   - **Authentication**: Simple password-based authentication mechanism. OAuth can be used in a minimal setup to simulate more complex scenarios.
+   - **Database**: HSQLDB as the initial database choice due to its lightweight nature. As it's more read-heavy, indexes should be optimized for the read operations.
+
+3. **Infrastructure & Monitoring**:
+   - **Containerization**: Docker will help you ensure consistent setups across any environment. Even if you're deploying on a single machine, it's a good practice.
+   - **Monitoring**: Even for a pet project, using Prometheus (in a light setup) along with Grafana can be beneficial for simulating monitoring in a real-world scenario. Additionally, the Spring Actuator will be in place for basic health checks.
+   - **Logging**: A basic ELK Stack setup will aid in log aggregation and searching.
+
+4. **Message Broker**:
+   - **Kafka**: While you might have very minimal event-driven communication initially, having a Kafka setup will be useful for simulating scenarios in more complex architectures.
+
+5. **Deployment**:
+   - Even though Kubernetes is an overkill for the given size, a simple setup using `docker-compose` can be used to simulate multi-container deployments.
+
+6. **External Integrations**:
+   - Placeholder APIs can be developed as mock endpoints to simulate real-world integrations with systems like payment gateways or email services. Tools like `json-server` can be handy for this.
+
+7. **Development & Deployment Strategy**:
+   - **Version Control**: Use Git for version control and GitHub for hosting. This will be useful for maintaining a clean code history and simulating collaboration scenarios.
+   - **Deployment**: Given the bi-weekly deployment schedule, manual deployment using Docker will be sufficient. Over time, if you'd like, you can explore CI/CD tools to automate this process.
