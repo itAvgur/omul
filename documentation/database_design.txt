@@ -1,0 +1,73 @@
+### **Entities and their attributes**:
+
+1. **User**:
+    - `user_id` (Primary Key, Auto-increment)
+    - `username` (Unique)
+    - `password_hash`
+    - `email` (Unique)
+    - `first_name`
+    - `last_name`
+    - `created_at`
+    - `updated_at`
+    - `role` (e.g., Customer, Admin)
+
+2. **Product**:
+    - `product_id` (Primary Key, Auto-increment)
+    - `name`
+    - `description`
+    - `price`
+    - `stock_quantity`
+    - `created_at`
+    - `updated_at`
+    - `image_url` (Optional)
+
+3. **Order**:
+    - `order_id` (Primary Key, Auto-increment)
+    - `user_id` (Foreign Key referencing User)
+    - `order_date`
+    - `status` (e.g., Placed, Shipped, Delivered, Cancelled)
+
+4. **OrderDetails**:
+    - `order_details_id` (Primary Key, Auto-increment)
+    - `order_id` (Foreign Key referencing Order)
+    - `product_id` (Foreign Key referencing Product)
+    - `quantity`
+    - `price_per_item`
+
+5. **Review** (Optional but adds depth to the application):
+    - `review_id` (Primary Key, Auto-increment)
+    - `user_id` (Foreign Key referencing User)
+    - `product_id` (Foreign Key referencing Product)
+    - `rating`
+    - `comment`
+    - `review_date`
+
+### **Relationships**:
+
+1. **User to Product**:
+    - One-to-many from User to Review. A user can write multiple reviews, but each review pertains to one user.
+    - One-to-many from Product to Review. A product can have multiple reviews, but each review is about one product.
+
+2. **User to Order**:
+    - One-to-many from User to Order. A user can have multiple orders, but each order belongs to one user.
+
+3. **Order to Product**:
+    - Many-to-many between Order and Product. This relationship is materialized using the OrderDetails entity, which has details of each product in an order.
+
+### **ERD (Entity Relationship Diagram)**:
+
+While I can't draw an ERD here, given the described entities and relationships, you can visualize:
+
+- The `User` entity at the center, connecting to `Order` and `Review`.
+- The `Product` entity connected to both `Review` and `OrderDetails`.
+- The `Order` entity connected through `OrderDetails` to `Product`.
+
+To create the actual schema in HSQLDB:
+
+1. Start by creating tables for each entity.
+2. Define the primary keys and the attributes.
+3. Introduce foreign key constraints for relationships.
+
+Once you've established this base schema, you can use tools like MyBatis to handle the ORM (Object-Relational Mapping) and make CRUD (Create, Read, Update, Delete) operations easier from your Kotlin-based Spring Boot application.
+
+Remember, this schema is a starting point. As the project evolves, you might find the need to normalize the schema further or introduce new entities and relationships.
