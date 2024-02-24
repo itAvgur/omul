@@ -1,0 +1,40 @@
+@startuml
+Title Helm deployment
+caption Omul project
+left to right direction
+scale 0.7
+
+skinparam {
+    BackgroundColor white
+    DefaultTextAlignment up
+    ArrowColor darkblue
+    ArrowThickness 2
+    DefaultTextAlignment center
+    RoundCorner 10
+    shadowing false
+}
+
+rectangle docker #lightblue {
+    node minikube  #white{
+        folder "namespace: omul" #gray {
+            package "helm chart" #lightblue {
+                database redis #red
+                component customerService #lightgray
+                component scheduleService #lightgray
+                component personnelService #lightgray
+                component appointmentService #lightgray
+                component authService #lightgray
+                component postgresScripts
+            }
+        }
+        folder "namespace: ingress-nginx" #lightgreen {
+            boundary "ingress-nginx"
+        }
+
+    }
+    database postgres #yellow
+    postgresScripts -u--> postgres
+}
+
+'docker -> minikube
+@enduml

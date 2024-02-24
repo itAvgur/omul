@@ -1,0 +1,47 @@
+@startuml
+Title States asynchronous process
+footer Omul project
+skinparam {
+    BackgroundColor white
+    ArrowColor black
+    ArrowThickness 2
+    RoundCorner 10
+    Linetype ortho
+    DefaultTextAlignment center
+}
+scale 500 width
+
+state "TimeSlot: Free" as tslot_free #lightgreen
+state "TimeSlot: Reserved" as tslot_reserved #lightgreen
+
+[*] --> tslot_free
+tslot_free --> app_pending
+note right of tslot_free : Start here
+
+state "Appointment: pending" as app_pending #orange {
+
+    app_pending -> wf_created
+    state "Workflow: created" as wf_created #lightblue
+    state "Workflow: in progress" as wf_progress #lightblue
+    wf_created -> wf_progress
+}
+
+state "Appointment created" as app_created #orange {
+    state "Workflow: appointment created" as wf_app_created #lightblue
+}
+
+wf_progress --> tslot_reserved
+tslot_reserved --> app_created
+app_created --> wf_app_created
+wf_app_created -d-> [*] : end
+
+tslot_reserved --[#red]--> app_canceled : revert transaction
+state "Appointment: canceled" as app_canceled #orange {
+    state "TimeSlot: Free" as tslot_free #lightgreen
+    state "Workflow: finished" as wf_finished #lightblue
+    state "TimeSlot: release" as tslot_released #lightgreen
+    tslot_released -[#red]--> tslot_free
+    tslot_released -[#red]-> wf_finished
+}
+
+@enduml

@@ -1,0 +1,61 @@
+@startuml
+title Make appointment, new customer, sync model
+caption footer
+scale 0.8
+
+hide unlinked
+
+autonumber
+skinparam {
+    BackgroundColor white
+    ArrowColor black
+    ArrowThickness 2
+    RoundCorner 10
+    DefaultTextAlignment center
+}
+actor Customer as customer order 10
+actor Administrator as admin
+participant ScheduleService as sched_svc order 10
+participant AppointmentService as app_svc order 15
+participant CustomerService as cust_svc order 20
+participant NotificationService as notif_svc order 25
+
+== Search free time slots==
+customer -> sched_svc : Request free slots \n GET /v1/slots/free
+sched_svc --> customer : send free timeSlot IDs
+
+== Make appointment ==
+autonumber 1
+
+activate app_svc #lightgreen
+customer -> app_svc : Make request for the certain time slot \n POST /v1/appointment/customer
+app_svc --> customer : Send status CREATED
+
+activate app_svc #green
+app_svc -> sched_svc : Check time slot is free \n GET /v1/reserve/free
+sched_svc --> app_svc :
+
+'alt if not exist the create temporary user
+'    app_svc -> cust_svc : Create temporary user \n POST /v1/customer/newby
+'    cust_svc -> app_svc : User created, send userId
+'end
+
+activate cust_svc #red
+app_svc -> cust_svc : Check user exists? \n GET /v1/customer
+cust_svc --> app_svc :
+app_svc -> cust_svc : Create temporary user \n POST /v1/customer/newby
+cust_svc --> app_svc : User created by correlationId
+deactivate cust_svc
+
+activate sched_svc #lightblue
+app_svc -> sched_svc: Reserve slot \n POST /v1/reserve
+sched_svc --> app_svc:
+app_svc -> app_svc: Change status from PENDING to CREATED
+deactivate sched_svc
+deactivate app_svc
+deactivate app_svc #lightgreen
+
+customer -> app_svc : Check appointment STATUS \n /v1/appointment/customer
+app_svc --> customer : Send status CREATED
+
+@enduml

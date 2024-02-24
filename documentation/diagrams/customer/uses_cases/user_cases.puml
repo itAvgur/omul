@@ -1,0 +1,86 @@
+@startuml
+skinparam {
+    actorStyle awesome
+    BackgroundColor lightGray
+    ActorFontName Courier
+    defaultTextAlignment center
+    linetype ortho
+}
+
+skinparam package {
+  BackgroundColor lightYellow
+  BorderColor black
+  FontColor black
+}
+
+hide stereotype
+left to right direction
+<style>
+ .financeStyle * {
+     BackgroundColor lightYellow
+     FontColor black
+     RoundCorner 10
+ }
+</style>
+
+:Клиент: as cust #green
+actor "Врач" as dentist #red
+:Администратор: as admin #black
+
+package "Карта клиента" as customer_data{
+    (Управлять картой клиента) as customer_data_manage
+    (Персональные данные) as customer_personal_data
+    (Медицинские данные) as customer_medical_data
+    (Плановые процедуры/тесты) as customer_plan_procedure
+    (Пройденные процедуры/тесты) as customer_feature_procedure
+    (Смотреть карту) as customer_data_read
+    customer_data_manage <.. customer_personal_data
+    customer_data_manage <.. customer_medical_data
+    customer_medical_data <.. customer_plan_procedure
+    customer_medical_data <.. customer_feature_procedure
+    customer_personal_data <-- customer_data_read
+    customer_medical_data <-- customer_data_read
+}
+cust -u-> customer_data_read #green;line.bold
+dentist -u-> customer_data_read #red;line.bold
+admin --> customer_data_manage #blue
+
+package "Финансы" <<financeStyle>> as finance {
+    (Управлять оплатой) as payment_manage
+    (Принимать оплату) as  payment_add
+    (Смотреть оплату) as  payment_read
+    (Отменять оплату) as payment_cancel
+    (Делать оплату on-line) as payment_do_online
+    payment_manage <.r. payment_add
+    payment_manage <.. payment_read
+    payment_manage <.. payment_cancel
+    payment_manage <.. payment_do_online
+}
+cust -u-> payment_do_online #green;line.bold
+cust --> payment_read #green;line.bold
+admin --> payment_manage #blue
+
+package "Дисконт" as discount {
+    (Управлять оплатой) as discount_manage
+    (Управлять данными \n в дисконтной системе) as discount_manage
+    (Проверять данные, \n делать скидку) as discount_check
+    discount_manage <.. discount_check
+}
+admin --> discount_manage #blue
+
+package "Запись на прием" <<appointmentStyle>> as appointment{
+    (Делать заявку на прием) as appointment_order
+    (Смотреть свободные слоты в расписание) as appointment_read_slots
+    (Подтверждать прием) as appointment_approve
+    (Отменять прием) as appointment_cancel
+    (Оставлять обратный отзыв) as feedback
+    appointment_order <.r. appointment_read_slots
+    appointment_order <.l. appointment_approve
+    appointment_order <.. appointment_cancel
+    appointment_order <.. feedback
+
+}
+cust --> appointment_order #green;line.bold
+admin --> appointment_order #blue
+
+@enduml
