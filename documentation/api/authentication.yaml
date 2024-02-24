@@ -1,0 +1,133 @@
+openapi: 3.0.1
+
+info:
+  title: Authentication service
+  version: 0.0.1
+  description: Managing authentication
+  contact:
+    name: Yury Melnikov
+    email: itavgur@gmail.com
+
+servers:
+  - url: 'http://localhost:8080'
+
+paths:
+  /v1/auth/register:
+    post:
+      summary: Create credential for user
+      operationId: signUpV1
+      tags:
+        - signUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignUpRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JwtResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+  /v1/auth/login/pass:
+    post:
+      summary: Authenticate by login/pass, claim JWT
+      operationId: authUserV1
+      tags:
+        - authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthenticationRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JwtResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+  /v1/auth/validate:
+    post:
+      summary: Validate authentication
+      operationId: validateAuthenticationV1
+      tags:
+        - authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthenticationRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JwtResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+
+components:
+  schemas:
+    SignUpRequest:
+      type: object
+      properties:
+        login:
+          type: integer
+          format: int32
+        linkedId:
+          type: string
+        role:
+          type: string
+          enum:
+            - CUSTOMER
+            - PERSONNEL
+        password:
+          type: string
+    AuthenticationRequest:
+      type: object
+      properties:
+        login:
+          type: integer
+          format: int32
+        password:
+          type: string
+    JwtResponse:
+      properties:
+        jwt:
+          type: string
+    StandardErrorMessage:
+      type: object
+      properties:
+        source:
+          type: string
+        httpCode:
+          type: integer
+          format: int32
+        message:
+          type: string
+
+tags:
+  - name: signUser
+  - name: authentication

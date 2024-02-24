@@ -1,0 +1,3438 @@
+{
+  "info": {
+    "_postman_id": "e18d275d-f72c-4b91-8284-fd1e21b4ffaf",
+    "name": "omul",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "21634154"
+  },
+  "item": [
+    {
+      "name": "appointmentService",
+      "item": [
+        {
+          "name": "make_appointment_id",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('idempotentKey', pm.variables.replaceIn('{{$guid}}'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "if (body.status == 'PENDING') {",
+                  "    pm.collectionVariables.set(\"appointmentServiceType\", \"async\")",
+                  "    pm.test(\"JSON test\", () => {",
+                  "        pm.expect(body.idempotentKey).is.equal(pm.collectionVariables.get(\"idempotentKey\"))",
+                  "        pm.expect(body.customerId).is.equal(2)",
+                  "    });",
+                  "}",
+                  "else if (body.status == 'CREATED') {",
+                  "    pm.collectionVariables.set(\"appointmentServiceType\", \"sync\")",
+                  "    pm.test(\"JSON test\", () => {",
+                  "        pm.expect(body.idempotentKey).is.equal(pm.collectionVariables.get(\"idempotentKey\"))",
+                  "        pm.expect(body.customerId).is.equal(2)",
+                  "        pm.expect(body.timeSlotId).is.equal(2)",
+                  "    });",
+                  "}",
+                  "",
+                  "else",
+                  "    throw new Error(\"wrong status of appointment\")",
+                  "",
+                  "",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"customerId\": 2,\n    \"timeSlotId\": 2,\n    \"idempotentKey\": \"{{idempotentKey}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{appointmentPort}}{{urlPrefix}}/appointment/customer",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{appointmentPort}}{{urlPrefix}}",
+              "path": [
+                "appointment",
+                "customer"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "make_appointment_id again",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.httpCode).is.equal(400);",
+                  "    pm.expect(body.message).is.equal('idempotent key already stored');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"customerId\": 4,\n    \"timeSlotId\": 4,\n    \"idempotentKey\": \"{{idempotentKey}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{appointmentPort}}{{urlPrefix}}/appointment/customer",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{appointmentPort}}{{urlPrefix}}",
+              "path": [
+                "appointment",
+                "customer"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_appointment_id",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if (pm.collectionVariables.get(\"appointmentServiceType\") == 'async') setTimeout(function () {}, 2000);",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.appointmentId).is.not.null;",
+                  "    pm.expect(body.customerId).is.not.null;",
+                  "    pm.expect(body.timeSlotId).to.eql(2);",
+                  "    pm.expect(body.status).to.eql('CREATED');",
+                  "    pm.collectionVariables.set(\"appointmentId\", body.appointmentId);",
+                  "    pm.collectionVariables.set(\"customerId\", body.customerId);",
+                  "});",
+                  "",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{appointmentPort}}{{urlPrefix}}/appointment/customer?idempotentKey={{idempotentKey}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{appointmentPort}}{{urlPrefix}}",
+              "path": [
+                "appointment",
+                "customer"
+              ],
+              "query": [
+                {
+                  "key": "idempotentKey",
+                  "value": "{{idempotentKey}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "confirm_appointment_id",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.appointmentId).is.equal(pm.collectionVariables.get(\"appointmentId\"));",
+                  "    pm.expect(body.status).to.eql('CONFIRMED');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"appointmentId\": {{appointmentId}},\n    \"status\": \"CONFIRMED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{appointmentPort}}{{urlPrefix}}/appointment/customer",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{appointmentPort}}{{urlPrefix}}",
+              "path": [
+                "appointment",
+                "customer"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_appointment_id confirmed",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.appointmentId).is.equal(pm.collectionVariables.get(\"appointmentId\"));",
+                  "    pm.expect(body.customerId).is.equal(pm.collectionVariables.get(\"customerId\"));",
+                  "    pm.expect(body.timeSlotId).to.eql(2);",
+                  "    pm.expect(body.status).to.eql('CONFIRMED');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{appointmentPort}}{{urlPrefix}}/appointment/customer?appointmentId={{appointmentId}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{appointmentPort}}{{urlPrefix}}",
+              "path": [
+                "appointment",
+                "customer"
+              ],
+              "query": [
+                {
+                  "key": "appointmentId",
+                  "value": "{{appointmentId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "make_appointment_uuid",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('idempotentKey', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('customerEmail', pm.variables.replaceIn('{{$randomEmail}}'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.idempotentKey).is.equal(pm.collectionVariables.get(\"idempotentKey\"))",
+                  "});",
+                  "",
+                  "if (body.status == 'PENDING') {",
+                  "    pm.collectionVariables.set(\"appointmentServiceType\", \"async\")",
+                  "    pm.test(\"JSON test\", () => {",
+                  "        pm.expect(body.idempotentKey).is.equal(pm.collectionVariables.get(\"idempotentKey\"))",
+                  "    });",
+                  "}",
+                  "else if (body.status == 'CREATED') {",
+                  "    pm.collectionVariables.set(\"appointmentServiceType\", \"sync\")",
+                  "    pm.test(\"JSON test\", () => {",
+                  "        pm.expect(body.idempotentKey).is.equal(pm.collectionVariables.get(\"idempotentKey\"))",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"timeSlotId\": 4,\n    \"idempotentKey\": \"{{idempotentKey}}\",\n    \"email\": \"{{customerEmail}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{appointmentPort}}{{urlPrefix}}/appointment/newCustomer",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{appointmentPort}}{{urlPrefix}}",
+              "path": [
+                "appointment",
+                "newCustomer"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_appointment_uuid",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if (pm.collectionVariables.get(\"appointmentServiceType\") == 'async') setTimeout(function () {}, 2000);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.appointmentId).is.not.null;",
+                  "    pm.expect(body.customerId).is.not.null;",
+                  "    pm.expect(body.timeSlotId).to.eql(4);",
+                  "    pm.expect(body.status).to.eql('CREATED');",
+                  "    pm.collectionVariables.set(\"appointmentId\", body.appointmentId);",
+                  "    pm.collectionVariables.set(\"customerId\", body.customerId);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{appointmentPort}}{{urlPrefix}}/appointment/customer?idempotentKey={{idempotentKey}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{appointmentPort}}{{urlPrefix}}",
+              "path": [
+                "appointment",
+                "customer"
+              ],
+              "query": [
+                {
+                  "key": "idempotentKey",
+                  "value": "{{idempotentKey}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cancel_appointment_uuid",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"idempotentKey\": \"{{idempotentKey}}\",\n    \"status\": \"CANCELED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{appointmentPort}}{{urlPrefix}}/appointment/customer",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{appointmentPort}}{{urlPrefix}}",
+              "path": [
+                "appointment",
+                "customer"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_appointment_uuid_canceled",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.idempotentKey).is.equal(pm.collectionVariables.get(\"idempotentKey\"));",
+                  "    pm.expect(body.appointmentId).is.equal(pm.collectionVariables.get(\"appointmentId\"));",
+                  "    pm.expect(body.customerId).is.equal(pm.collectionVariables.get(\"customerId\"));",
+                  "    pm.expect(body.timeSlotId).to.eql(4);",
+                  "    pm.expect(body.status).to.eql('CANCELED');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{appointmentPort}}{{urlPrefix}}/appointment/customer?idempotentKey={{idempotentKey}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{appointmentPort}}{{urlPrefix}}",
+              "path": [
+                "appointment",
+                "customer"
+              ],
+              "query": [
+                {
+                  "key": "idempotentKey",
+                  "value": "{{idempotentKey}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "customerService",
+      "item": [
+        {
+          "name": "register_temp_user_not_valid",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set(\"customerEmail\", \"{{$randomEmail}}\");",
+                  "pm.collectionVariables.set(\"customerPhone\", \"{{$randomPhone}}\");"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.httpCode).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{customerPhone}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/customer/newby",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "customer",
+                "newby"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "register_temp_user",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('customerEmail', pm.variables.replaceIn('{{$randomEmail}}'));",
+                  "pm.collectionVariables.set('customerPhone', pm.variables.replaceIn('{{$randomPhoneNumberExt}}'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.email).to.eql(pm.collectionVariables.get(\"customerEmail\"));",
+                  "    pm.expect(body.phone).to.eql(pm.collectionVariables.get(\"customerPhone\"));",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{customerPhone}}\",\n  \"email\": \"{{customerEmail}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/customer/newby",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "customer",
+                "newby"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_user_not_exist",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('customerId', -1);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.httpCode).to.eql(400);",
+                  "    pm.expect(responseJson.message).to.eql(\"customer with id \" + pm.collectionVariables.get(\"customerId\") + \" is absent\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/customer?customerId={{customerId}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "customer"
+              ],
+              "query": [
+                {
+                  "key": "customerId",
+                  "value": "{{customerId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "register_permanent_user",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const moment = require('moment');",
+                  "",
+                  "pm.collectionVariables.set('customerFirstName', pm.variables.replaceIn('{{$randomFirstName}}'));",
+                  "pm.collectionVariables.set('customerLastName', pm.variables.replaceIn('{{$randomLastName}}'));",
+                  "pm.collectionVariables.set('customerGender', _.sample(['MALE', 'FEMALE']));",
+                  "pm.collectionVariables.set('customerDocumentId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('customerBirthDate', moment().format(\"YYYY-MM-DD\"));",
+                  "pm.collectionVariables.set('customerEmail', pm.variables.replaceIn('{{$randomEmail}}'));",
+                  "pm.collectionVariables.set('customerPhone', pm.variables.replaceIn('{{$randomPhoneNumberExt}}'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.firstName).to.eql(pm.collectionVariables.get(\"customerFirstName\"));",
+                  "    pm.expect(body.lastName).to.eql(pm.collectionVariables.get(\"customerLastName\"));",
+                  "    pm.expect(body.gender).to.eql(pm.collectionVariables.get(\"customerGender\"));",
+                  "    pm.expect(body.documentId).to.eql(pm.collectionVariables.get(\"customerDocumentId\"));",
+                  "    pm.expect(body.birthDay).to.eql(pm.collectionVariables.get(\"customerBirthDate\"));",
+                  "    pm.expect(body.email).to.eql(pm.collectionVariables.get(\"customerEmail\"));",
+                  "    pm.expect(body.phone).to.eql(pm.collectionVariables.get(\"customerPhone\"));",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('customerId', body.customerId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"{{customerFirstName}}\",\n  \"lastName\": \"{{customerLastName}}\",\n  \"gender\": \"{{customerGender}}\",\n  \"documentId\": \"{{customerDocumentId}}\",\n  \"birthDay\": \"{{customerBirthDate}}\",\n  \"phone\": \"{{customerPhone}}\",\n  \"email\": \"{{customerEmail}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/customer",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "customer"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update_permanent_user_not_exist",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const moment = require('moment');",
+                  "",
+                  "pm.collectionVariables.set('customerFirstName', pm.variables.replaceIn('{{$randomFirstName}}'));",
+                  "pm.collectionVariables.set('customerLastName', pm.variables.replaceIn('{{$randomLastName}}'));",
+                  "pm.collectionVariables.set('customerGender', _.sample(['MALE', 'FEMALE']));",
+                  "pm.collectionVariables.set('customerDocumentId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('customerBirthDate', moment().format(\"YYYY-MM-DD\"));",
+                  "pm.collectionVariables.set('customerEmail', pm.variables.replaceIn('{{$randomEmail}}'));",
+                  "pm.collectionVariables.set('customerPhone', pm.variables.replaceIn('{{$randomPhoneNumberExt}}'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.httpCode).to.eql(400);",
+                  "    pm.expect(responseJson.message).to.eql(\"customer with id -1 is absent\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"-1\",\n  \"firstName\": \"{{customerFirstName}}\",\n  \"lastName\": \"{{customerLastName}}\",\n  \"gender\": \"{{customerGender}}\",\n  \"documentId\": \"{{customerDocumentId}}\",\n  \"birthDay\": \"{{customerBirthDate}}\",\n  \"phone\": \"{{customerPhone}}\",\n  \"email\": \"{{customerEmail}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/customer",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "customer"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update_permanent_user",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const moment = require('moment');",
+                  "",
+                  "pm.collectionVariables.set('customerFirstName', pm.variables.replaceIn('{{$randomFirstName}}'));",
+                  "pm.collectionVariables.set('customerLastName', pm.variables.replaceIn('{{$randomLastName}}'));",
+                  "pm.collectionVariables.set('customerGender', _.sample(['MALE', 'FEMALE']));",
+                  "pm.collectionVariables.set('customerDocumentId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('customerBirthDate', moment().format(\"YYYY-MM-DD\"));",
+                  "pm.collectionVariables.set('customerEmail', pm.variables.replaceIn('{{$randomEmail}}'));",
+                  "pm.collectionVariables.set('customerPhone', pm.variables.replaceIn('{{$randomPhoneNumberExt}}'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.firstName).to.eql(pm.collectionVariables.get(\"customerFirstName\"));",
+                  "    pm.expect(body.lastName).to.eql(pm.collectionVariables.get(\"customerLastName\"));",
+                  "    pm.expect(body.gender).to.eql(pm.collectionVariables.get(\"customerGender\"));",
+                  "    pm.expect(body.documentId).to.eql(pm.collectionVariables.get(\"customerDocumentId\"));",
+                  "    pm.expect(body.birthDay).to.eql(pm.collectionVariables.get(\"customerBirthDate\"));",
+                  "    pm.expect(body.email).to.eql(pm.collectionVariables.get(\"customerEmail\"));",
+                  "    pm.expect(body.phone).to.eql(pm.collectionVariables.get(\"customerPhone\"));",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"firstName\": \"{{customerFirstName}}\",\n  \"lastName\": \"{{customerLastName}}\",\n  \"gender\": \"{{customerGender}}\",\n  \"documentId\": \"{{customerDocumentId}}\",\n  \"birthDay\": \"{{customerBirthDate}}\",\n  \"phone\": \"{{customerPhone}}\",\n  \"email\": \"{{customerEmail}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/customer",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "customer"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_updated_permanent_user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.firstName).to.eql(pm.collectionVariables.get(\"customerFirstName\"));",
+                  "    pm.expect(body.lastName).to.eql(pm.collectionVariables.get(\"customerLastName\"));",
+                  "    pm.expect(body.gender).to.eql(pm.collectionVariables.get(\"customerGender\"));",
+                  "    pm.expect(body.documentId).to.eql(pm.collectionVariables.get(\"customerDocumentId\"));",
+                  "    pm.expect(body.birthDay).to.eql(pm.collectionVariables.get(\"customerBirthDate\"));",
+                  "    pm.expect(body.email).to.eql(pm.collectionVariables.get(\"customerEmail\"));",
+                  "    pm.expect(body.phone).to.eql(pm.collectionVariables.get(\"customerPhone\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/customer?customerId={{customerId}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "customer"
+              ],
+              "query": [
+                {
+                  "key": "customerId",
+                  "value": "{{customerId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_procedure_not_exist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.httpCode).to.eql(400);",
+                  "    pm.expect(responseJson.message).to.eql(\"customer with id -1 is absent\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/procedure?customerId=-1",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "procedure"
+              ],
+              "query": [
+                {
+                  "key": "customerId",
+                  "value": "-1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add_procedure 1",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const moment = require('moment');",
+                  "",
+                  "pm.collectionVariables.set('procedure1Summary', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('procedure1Description', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('procedure1Date', moment().format(\"yyyy-MM-DDTHH:mm:ss\"));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.customerId).to.eql(pm.collectionVariables.get(\"customerId\"));",
+                  "    pm.expect(body.summary).to.eql(pm.collectionVariables.get(\"procedure1Summary\"));",
+                  "    pm.expect(body.description).to.eql(pm.collectionVariables.get(\"procedure1Description\"));",
+                  "    pm.expect(body.date).to.eql(pm.collectionVariables.get(\"procedure1Date\"));",
+                  "});",
+                  "pm.collectionVariables.set('procedure1Id', body.procedureId);",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"summary\": \"{{procedure1Summary}}\",\n  \"description\": \"{{procedure1Description}}\",\n  \"date\": \"{{procedure1Date}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/procedure?customerId={{customerId}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "procedure"
+              ],
+              "query": [
+                {
+                  "key": "customerId",
+                  "value": "{{customerId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add_procedure 2",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const moment = require('moment');",
+                  "",
+                  "pm.collectionVariables.set('procedure2Summary', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('procedure2Description', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('procedure2Date', moment().format(\"yyyy-MM-DDTHH:mm:ss\"));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.customerId).to.eql(pm.collectionVariables.get(\"customerId\"));",
+                  "    pm.expect(body.summary).to.eql(pm.collectionVariables.get(\"procedure2Summary\"));",
+                  "    pm.expect(body.description).to.eql(pm.collectionVariables.get(\"procedure2Description\"));",
+                  "    pm.expect(body.date).to.eql(pm.collectionVariables.get(\"procedure2Date\"));",
+                  "});",
+                  "pm.collectionVariables.set('procedure2Id', body.procedureId);",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"summary\": \"{{procedure2Summary}}\",\n  \"description\": \"{{procedure2Description}}\",\n  \"date\": \"{{procedure2Date}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/procedure?customerId={{customerId}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "procedure"
+              ],
+              "query": [
+                {
+                  "key": "customerId",
+                  "value": "{{customerId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_procedures",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "const procedureId = pm.collectionVariables.get(\"procedureId\");",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.length).to.eq(2);",
+                  "    pm.expect(body[0].customerId).to.eql(pm.collectionVariables.get(\"customerId\"));",
+                  "    pm.expect(body[0].summary).to.eql(pm.collectionVariables.get(\"procedure1Summary\"));",
+                  "    pm.expect(body[0].description).to.eql(pm.collectionVariables.get(\"procedure1Description\"));",
+                  "    pm.expect(body[0].date).to.eql(pm.collectionVariables.get(\"procedure1Date\"));",
+                  "    pm.expect(body[1].customerId).to.eql(pm.collectionVariables.get(\"customerId\"));",
+                  "    pm.expect(body[1].summary).to.eql(pm.collectionVariables.get(\"procedure2Summary\"));",
+                  "    pm.expect(body[1].description).to.eql(pm.collectionVariables.get(\"procedure2Description\"));",
+                  "    pm.expect(body[1].date).to.eql(pm.collectionVariables.get(\"procedure2Date\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/procedure?customerId={{customerId}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "procedure"
+              ],
+              "query": [
+                {
+                  "key": "customerId",
+                  "value": "{{customerId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_tests_not_exist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.httpCode).to.eql(400);",
+                  "    pm.expect(responseJson.message).to.eql(\"customer with id -1 is absent\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/test?customerId=-1",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "test"
+              ],
+              "query": [
+                {
+                  "key": "customerId",
+                  "value": "-1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add_test 1",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const moment = require('moment');",
+                  "",
+                  "pm.collectionVariables.set('test1Summary', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('test1Description', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('test1Date', moment().format(\"yyyy-MM-DDTHH:mm:ss\"));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.customerId).to.eql(pm.collectionVariables.get(\"customerId\"));",
+                  "    pm.expect(body.summary).to.eql(pm.collectionVariables.get(\"test1Summary\"));",
+                  "    pm.expect(body.description).to.eql(pm.collectionVariables.get(\"test1Description\"));",
+                  "    pm.expect(body.date).to.eql(pm.collectionVariables.get(\"test1Date\"));",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('test1Id', body.testId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"summary\": \"{{test1Summary}}\",\n  \"description\": \"{{test1Description}}\",\n  \"date\": \"{{test1Date}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/test",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "test"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add_test 2",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const moment = require('moment');",
+                  "",
+                  "pm.collectionVariables.set('test2Summary', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('test2Description', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('test2Date', moment().format(\"yyyy-MM-DDTHH:mm:ss\"));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.customerId).to.eql(pm.collectionVariables.get(\"customerId\"));",
+                  "    pm.expect(body.summary).to.eql(pm.collectionVariables.get(\"test2Summary\"));",
+                  "    pm.expect(body.description).to.eql(pm.collectionVariables.get(\"test2Description\"));",
+                  "    pm.expect(body.date).to.eql(pm.collectionVariables.get(\"test2Date\"));",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('test2Id', body.testId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"summary\": \"{{test2Summary}}\",\n  \"description\": \"{{test2Description}}\",\n  \"date\": \"{{test2Date}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/test",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "test"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_tests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "const testId = pm.collectionVariables.get(\"testId\");",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.length).to.eq(2);",
+                  "    pm.expect(body[0].testId).to.eql(pm.collectionVariables.get(\"test1Id\"));",
+                  "    pm.expect(body[0].customerId).to.eql(pm.collectionVariables.get(\"customerId\"));",
+                  "    pm.expect(body[0].summary).to.eql(pm.collectionVariables.get(\"test1Summary\"));",
+                  "    pm.expect(body[0].description).to.eql(pm.collectionVariables.get(\"test1Description\"));",
+                  "    pm.expect(body[0].date).to.eql(pm.collectionVariables.get(\"test1Date\"));",
+                  "    pm.expect(body[1].testId).to.eql(pm.collectionVariables.get(\"test2Id\"));",
+                  "    pm.expect(body[1].customerId).to.eql(pm.collectionVariables.get(\"customerId\"));",
+                  "    pm.expect(body[1].summary).to.eql(pm.collectionVariables.get(\"test2Summary\"));",
+                  "    pm.expect(body[1].description).to.eql(pm.collectionVariables.get(\"test2Description\"));",
+                  "    pm.expect(body[1].date).to.eql(pm.collectionVariables.get(\"test2Date\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/test?customerId={{customerId}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "test"
+              ],
+              "query": [
+                {
+                  "key": "customerId",
+                  "value": "{{customerId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add_result_to_test 1",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const moment = require('moment');",
+                  "",
+                  "pm.collectionVariables.set('test1ResultDescription', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('test1ResultDate', moment().format(\"yyyy-MM-DDTHH:mm:ss\"));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "const testId = pm.collectionVariables.get(\"testId\");",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.result).to.eql(pm.collectionVariables.get(\"test1ResultDescription\"));",
+                  "    pm.expect(body.date).to.eql(pm.collectionVariables.get(\"test1ResultDate\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"testId\": {{test1Id}},\n  \"result\": \"{{test1ResultDescription}}\",\n  \"date\": \"{{test1ResultDate}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/test/result",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "test",
+                "result"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add_result_to_test 2",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const moment = require('moment');",
+                  "",
+                  "pm.collectionVariables.set('test2ResultDescription', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('test2ResultDate', moment().format(\"yyyy-MM-DDTHH:mm:ss\"));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "const testId = pm.collectionVariables.get(\"testId\");",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.result).to.eql(pm.collectionVariables.get(\"test2ResultDescription\"));",
+                  "    pm.expect(body.date).to.eql(pm.collectionVariables.get(\"test2ResultDate\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"testId\": {{test1Id}},\n  \"result\": \"{{test2ResultDescription}}\",\n  \"date\": \"{{test2ResultDate}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/test/result",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "test",
+                "result"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_tests_w_result",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "const testId = pm.collectionVariables.get(\"test1Id\");",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body[0].testId).to.eql(pm.collectionVariables.get(\"test1Id\"));",
+                  "    pm.expect(body[0].customerId).to.eql(pm.collectionVariables.get(\"customerId\"));",
+                  "    pm.expect(body[0].summary).to.eql(pm.collectionVariables.get(\"test1Summary\"));",
+                  "    pm.expect(body[0].description).to.eql(pm.collectionVariables.get(\"test1Description\"));",
+                  "    pm.expect(body[0].date).to.eql(pm.collectionVariables.get(\"test1Date\"));",
+                  "",
+                  "    pm.expect(body[0].results[0].result).to.eql(pm.collectionVariables.get(\"test1ResultDescription\"));",
+                  "    pm.expect(body[0].results[0].date).to.eql(pm.collectionVariables.get(\"test1ResultDate\"));",
+                  "    pm.expect(body[0].results[1].result).to.eql(pm.collectionVariables.get(\"test2ResultDescription\"));",
+                  "    pm.expect(body[0].results[1].date).to.eql(pm.collectionVariables.get(\"test2ResultDate\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{customerPort}}{{urlPrefix}}/test?customerId={{customerId}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{customerPort}}{{urlPrefix}}",
+              "path": [
+                "test"
+              ],
+              "query": [
+                {
+                  "key": "customerId",
+                  "value": "{{customerId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "personnelService",
+      "item": [
+        {
+          "name": "get_employee_exist",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('employeeId', -1);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.httpCode).to.eql(400);",
+                  "    pm.expect(responseJson.message).to.eql(\"employee with id \" + pm.collectionVariables.get(\"employeeId\") + \" is absent\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{personnelPort}}{{urlPrefix}}/employee?employeeId={{employeeId}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{personnelPort}}{{urlPrefix}}",
+              "path": [
+                "employee"
+              ],
+              "query": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "register_employee",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const moment = require('moment');",
+                  "",
+                  "pm.collectionVariables.set('employeeLogin', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('employeeFirstName', pm.variables.replaceIn('{{$randomFirstName}}'));",
+                  "pm.collectionVariables.set('employeeLastName', pm.variables.replaceIn('{{$randomLastName}}'));",
+                  "pm.collectionVariables.set('employeeGender', _.sample(['MALE', 'FEMALE']));",
+                  "pm.collectionVariables.set('employeeDocumentId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('employeeBirthDate', moment().format(\"YYYY-MM-DD\"));",
+                  "pm.collectionVariables.set('employeeEmail', pm.variables.replaceIn('{{$randomEmail}}'));",
+                  "pm.collectionVariables.set('employeePhone', pm.variables.replaceIn('{{$randomPhoneNumberExt}}'));",
+                  "pm.collectionVariables.set('employeeQualification', pm.variables.replaceIn('{{$randomJobTitle}}'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.employeeId).is.not.null;",
+                  "    pm.expect(body.firstName).to.eql(pm.collectionVariables.get(\"employeeFirstName\"));",
+                  "    pm.expect(body.lastName).to.eql(pm.collectionVariables.get(\"employeeLastName\"));",
+                  "    pm.expect(body.gender).to.eql(pm.collectionVariables.get(\"employeeGender\"));",
+                  "    pm.expect(body.documentId).to.eql(pm.collectionVariables.get(\"employeeDocumentId\"));",
+                  "    pm.expect(body.birthDay).to.eql(pm.collectionVariables.get(\"employeeBirthDate\"));",
+                  "    pm.expect(body.email).to.eql(pm.collectionVariables.get(\"employeeEmail\"));",
+                  "    pm.expect(body.phone).to.eql(pm.collectionVariables.get(\"employeePhone\"));",
+                  "    pm.expect(body.qualification).to.eql(pm.collectionVariables.get(\"employeeQualification\"));",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('employeeId', body.employeeId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"login\": \"{{employeeLogin}}\",\n    \"firstName\": \"{{employeeFirstName}}\",\n    \"lastName\": \"{{employeeLastName}}\",\n    \"gender\": \"{{employeeGender}}\",\n    \"documentId\": \"{{employeeDocumentId}}\",\n    \"birthDay\": \"{{employeeBirthDate}}\",\n    \"phone\": \"{{employeePhone}}\",\n    \"email\": \"{{employeeEmail}}\",\n    \"qualification\": \"{{employeeQualification}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{personnelPort}}{{urlPrefix}}/employee",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{personnelPort}}{{urlPrefix}}",
+              "path": [
+                "employee"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_employee",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.firstName).to.eql(pm.collectionVariables.get(\"employeeFirstName\"));",
+                  "    pm.expect(body.lastName).to.eql(pm.collectionVariables.get(\"employeeLastName\"));",
+                  "    pm.expect(body.gender).to.eql(pm.collectionVariables.get(\"employeeGender\"));",
+                  "    pm.expect(body.documentId).to.eql(pm.collectionVariables.get(\"employeeDocumentId\"));",
+                  "    pm.expect(body.birthDay).to.eql(pm.collectionVariables.get(\"employeeBirthDate\"));",
+                  "    pm.expect(body.email).to.eql(pm.collectionVariables.get(\"employeeEmail\"));",
+                  "    pm.expect(body.phone).to.eql(pm.collectionVariables.get(\"employeePhone\"));",
+                  "    pm.expect(body.qualification).to.eql(pm.collectionVariables.get(\"employeeQualification\"));",
+                  "});",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{personnelPort}}{{urlPrefix}}/employee?employeeId={{employeeId}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{personnelPort}}{{urlPrefix}}",
+              "path": [
+                "employee"
+              ],
+              "query": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update_ employee_not_exist",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const moment = require('moment');",
+                  "",
+                  "pm.collectionVariables.set('employeeFirstName', pm.variables.replaceIn('{{$randomFirstName}}'));",
+                  "pm.collectionVariables.set('employeeLastName', pm.variables.replaceIn('{{$randomLastName}}'));",
+                  "pm.collectionVariables.set('employeeGender', _.sample(['MALE', 'FEMALE']));",
+                  "pm.collectionVariables.set('employeeDocumentId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('employeeBirthDate', moment().format(\"YYYY-MM-DD\"));",
+                  "pm.collectionVariables.set('employeeEmail', pm.variables.replaceIn('{{$randomEmail}}'));",
+                  "pm.collectionVariables.set('employeePhone', pm.variables.replaceIn('{{$randomPhoneNumberExt}}'));",
+                  "pm.collectionVariables.set('employeeQualification', pm.variables.replaceIn('{{$randomJobTitle}}'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.httpCode).to.eql(400);",
+                  "    pm.expect(responseJson.message).to.eql(\"employee with id -1 is absent\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"employeeId\": -1,\n    \"firstName\": \"{{employeeFirstName}}\",\n    \"lastName\": \"{{employeeLastName}}\",\n    \"gender\": \"{{employeeGender}}\",\n    \"documentId\": \"{{employeeDocumentId}}\",\n    \"birthDay\": \"{{employeeBirthDate}}\",\n    \"phone\": \"{{employeePhone}}\",\n    \"email\": \"{{employeeEmail}}\",\n    \"qualification\": \"{{employeeQualification}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{personnelPort}}{{urlPrefix}}/employee",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{personnelPort}}{{urlPrefix}}",
+              "path": [
+                "employee"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update_employee",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const moment = require('moment');",
+                  "",
+                  "pm.collectionVariables.set('employeeFirstName', pm.variables.replaceIn('{{$randomFirstName}}'));",
+                  "pm.collectionVariables.set('employeeLastName', pm.variables.replaceIn('{{$randomLastName}}'));",
+                  "pm.collectionVariables.set('employeeGender', _.sample(['MALE', 'FEMALE']));",
+                  "pm.collectionVariables.set('employeeDocumentId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.collectionVariables.set('employeeBirthDate', moment().format(\"YYYY-MM-DD\"));",
+                  "pm.collectionVariables.set('employeeEmail', pm.variables.replaceIn('{{$randomEmail}}'));",
+                  "pm.collectionVariables.set('employeePhone', pm.variables.replaceIn('{{$randomPhoneNumberExt}}'));",
+                  "pm.collectionVariables.set('employeeQualification', pm.variables.replaceIn('{{$guid}}'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.firstName).to.eql(pm.collectionVariables.get(\"employeeFirstName\"));",
+                  "    pm.expect(body.lastName).to.eql(pm.collectionVariables.get(\"employeeLastName\"));",
+                  "    pm.expect(body.gender).to.eql(pm.collectionVariables.get(\"employeeGender\"));",
+                  "    pm.expect(body.documentId).to.eql(pm.collectionVariables.get(\"employeeDocumentId\"));",
+                  "    pm.expect(body.birthDay).to.eql(pm.collectionVariables.get(\"employeeBirthDate\"));",
+                  "    pm.expect(body.email).to.eql(pm.collectionVariables.get(\"employeeEmail\"));",
+                  "    pm.expect(body.phone).to.eql(pm.collectionVariables.get(\"employeePhone\"));",
+                  "    pm.expect(body.qualification).to.eql(pm.collectionVariables.get(\"employeeQualification\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeId\": \"{{employeeId}}\",\n  \"firstName\": \"{{employeeFirstName}}\",\n  \"lastName\": \"{{employeeLastName}}\",\n  \"gender\": \"{{employeeGender}}\",\n  \"documentId\": \"{{employeeDocumentId}}\",\n  \"birthDay\": \"{{employeeBirthDate}}\",\n  \"phone\": \"{{employeePhone}}\",\n  \"email\": \"{{employeeEmail}}\",\n  \"qualification\": \"{{employeeQualification}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{personnelPort}}{{urlPrefix}}/employee",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{personnelPort}}{{urlPrefix}}",
+              "path": [
+                "employee"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_updated_employee",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.firstName).to.eql(pm.collectionVariables.get(\"employeeFirstName\"));",
+                  "    pm.expect(body.lastName).to.eql(pm.collectionVariables.get(\"employeeLastName\"));",
+                  "    pm.expect(body.gender).to.eql(pm.collectionVariables.get(\"employeeGender\"));",
+                  "    pm.expect(body.documentId).to.eql(pm.collectionVariables.get(\"employeeDocumentId\"));",
+                  "    pm.expect(body.birthDay).to.eql(pm.collectionVariables.get(\"employeeBirthDate\"));",
+                  "    pm.expect(body.email).to.eql(pm.collectionVariables.get(\"employeeEmail\"));",
+                  "    pm.expect(body.phone).to.eql(pm.collectionVariables.get(\"employeePhone\"));",
+                  "    pm.expect(body.qualification).to.eql(pm.collectionVariables.get(\"employeeQualification\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{personnelPort}}{{urlPrefix}}/employee?employeeId={{employeeId}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{personnelPort}}{{urlPrefix}}",
+              "path": [
+                "employee"
+              ],
+              "query": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "scheduleService",
+      "item": [
+        {
+          "name": "_init",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  " body = pm.response.json();",
+                  " doctorId = parseInt(pm.collectionVariables.get(\"doctorId\"));",
+                  "length = body.length;",
+                  "",
+                  "if (length == 0) {",
+                  "    pm.collectionVariables.set(\"doctorId\", 0)",
+                  "} else {",
+                  "    pm.collectionVariables.set(\"doctorId\", body[length-1].doctorId +1)",
+                  "}",
+                  "",
+                  "pm.collectionVariables.set(\"firstSlotIdx\", length);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{schedulePort}}{{urlPrefix}}/manage/slot",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{schedulePort}}{{urlPrefix}}",
+              "path": [
+                "manage",
+                "slot"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "put_new_slots",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body).to.eq(2);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"doctorId\": {{doctorId}},\n    \"dateTimeStart\": \"2024-02-10T09:00:00\",\n    \"dateTimeEnd\": \"2024-02-10T10:00:00\",\n    \"status\": \"FREE\"\n  },\n    {\n    \"doctorId\": {{doctorId}},\n    \"dateTimeStart\": \"2024-02-10T10:00:00\",\n    \"dateTimeEnd\": \"2024-02-10T11:00:00\",\n    \"status\": \"FREE\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{schedulePort}}{{urlPrefix}}/manage/slot",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{schedulePort}}{{urlPrefix}}",
+              "path": [
+                "manage",
+                "slot"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_all_slots",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "const doctorId = parseInt(pm.collectionVariables.get(\"doctorId\"))",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "        console.log(\"length: \" + body.length)",
+                  "    pm.expect(body.length).to.eq(2);",
+                  "",
+                  "    pm.expect(body[0].doctorId).to.eql(doctorId);",
+                  "    pm.expect(body[0].dateTimeStart).to.eql(\"2024-02-10T09:00:00\");",
+                  "    pm.expect(body[0].dateTimeEnd).to.eql(\"2024-02-10T10:00:00\");",
+                  "    pm.expect(body[0].status).to.eql(\"FREE\");",
+                  "",
+                  "    pm.expect(body[1].doctorId).to.eql(doctorId);",
+                  "    pm.expect(body[1].dateTimeStart).to.eql(\"2024-02-10T10:00:00\");",
+                  "    pm.expect(body[1].dateTimeEnd).to.eql(\"2024-02-10T11:00:00\");",
+                  "    pm.expect(body[1].status).to.eql(\"FREE\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{schedulePort}}{{urlPrefix}}/manage/slot?doctorId={{doctorId}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{schedulePort}}{{urlPrefix}}",
+              "path": [
+                "manage",
+                "slot"
+              ],
+              "query": [
+                {
+                  "key": "doctorId",
+                  "value": "{{doctorId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_free_slots_filtered",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "firstSlotIdx = parseInt(pm.collectionVariables.get(\"firstSlotIdx\"))",
+                  "doctorId = parseInt(pm.collectionVariables.get(\"doctorId\"))",
+                  "",
+                  "pm.test(\"JSON test\", () => {",
+                  "",
+                  "    pm.expect(body.doctorId).to.eql(doctorId);",
+                  "    pm.expect(body.dateFrom).to.eql(\"2024-02-10T09:00:00\");",
+                  "    pm.expect(body.dateTo).to.eql(\"2024-02-10T14:00:00\");",
+                  "",
+                  "    pm.expect(body.timeSlots.length).to.eq(2);",
+                  "",
+                  "    pm.expect(body.timeSlots[0].slotId).to.eql(firstSlotIdx);",
+                  "    pm.expect(body.timeSlots[0].doctorId).to.eql(doctorId);",
+                  "    pm.expect(body.timeSlots[0].dateTimeStart).to.eql(\"2024-02-10T09:00:00\");",
+                  "    pm.expect(body.timeSlots[0].dateTimeEnd).to.eql(\"2024-02-10T10:00:00\");",
+                  "    pm.expect(body.timeSlots[0].doctorFullName).is.not.empty;",
+                  "    pm.expect(body.timeSlots[0].doctorQualification).is.not.empty;",
+                  "",
+                  "    pm.expect(body.timeSlots[1].slotId).to.eql(firstSlotIdx + 1);",
+                  "    pm.expect(body.timeSlots[1].doctorId).to.eql(doctorId);",
+                  "    pm.expect(body.timeSlots[1].dateTimeStart).to.eql(\"2024-02-10T10:00:00\");",
+                  "    pm.expect(body.timeSlots[1].dateTimeEnd).to.eql(\"2024-02-10T11:00:00\");",
+                  "    pm.expect(body.timeSlots[1].doctorFullName).is.not.empty;",
+                  "    pm.expect(body.timeSlots[1].doctorQualification).is.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{schedulePort}}{{urlPrefix}}/reserve/free?doctorId={{doctorId}}&dateFrom=2024-02-10T09:00:00&dateTo=2024-02-10T14:00:00&status=FREE",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{schedulePort}}{{urlPrefix}}",
+              "path": [
+                "reserve",
+                "free"
+              ],
+              "query": [
+                {
+                  "key": "doctorId",
+                  "value": "{{doctorId}}"
+                },
+                {
+                  "key": "dateFrom",
+                  "value": "2024-02-10T09:00:00"
+                },
+                {
+                  "key": "dateTo",
+                  "value": "2024-02-10T14:00:00"
+                },
+                {
+                  "key": "status",
+                  "value": "FREE"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "reserve_slot",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "firstSlotIdx = parseInt(pm.collectionVariables.get(\"firstSlotIdx\"))",
+                  "doctorId = parseInt(pm.collectionVariables.get(\"doctorId\"))",
+                  "pm.test(\"JSON test\", () => {",
+                  "",
+                  "    pm.expect(body.slotId).to.eql(firstSlotIdx);",
+                  "    pm.expect(body.doctorId).to.eql(doctorId);",
+                  "    pm.expect(body.customerId).to.eql(33);",
+                  "    pm.expect(body.dateTimeStart).to.eql(\"2024-02-10T09:00:00\");",
+                  "    pm.expect(body.dateTimeEnd).to.eql(\"2024-02-10T10:00:00\");",
+                  "    pm.expect(body.status).to.eql(\"RESERVED\");",
+                  "    pm.expect(body.doctorFullName).is.not.empty;",
+                  "    pm.expect(body.doctorQualification).is.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": 33,\n  \"slotId\": {{firstSlotIdx}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{schedulePort}}{{urlPrefix}}/reserve",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{schedulePort}}{{urlPrefix}}",
+              "path": [
+                "reserve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "reserve_slot_not_free",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.httpCode).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": 33,\n  \"slotId\": {{firstSlotIdx}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{schedulePort}}{{urlPrefix}}/reserve",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{schedulePort}}{{urlPrefix}}",
+              "path": [
+                "reserve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_reserved_slot",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "firstSlotIdx = parseInt(pm.collectionVariables.get(\"firstSlotIdx\"))",
+                  "doctorId = parseInt(pm.collectionVariables.get(\"doctorId\"))",
+                  "pm.test(\"JSON test\", () => {",
+                  "",
+                  "    pm.expect(body.slotId).to.eql(firstSlotIdx);",
+                  "    pm.expect(body.doctorId).to.eql(doctorId);",
+                  "    pm.expect(body.dateTimeStart).to.eql(\"2024-02-10T09:00:00\");",
+                  "    pm.expect(body.dateTimeEnd).to.eql(\"2024-02-10T10:00:00\");",
+                  "    pm.expect(body.status).to.eql(\"RESERVED\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{schedulePort}}{{urlPrefix}}/reserve/{{firstSlotIdx}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{schedulePort}}{{urlPrefix}}",
+              "path": [
+                "reserve",
+                "{{firstSlotIdx}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_other_free_slots",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "firstSlotIdx = parseInt(pm.collectionVariables.get(\"firstSlotIdx\"))",
+                  "doctorId = parseInt(pm.collectionVariables.get(\"doctorId\"))",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.timeSlots.length).to.eq(1);",
+                  "",
+                  "    pm.expect(body.timeSlots[0].slotId).to.eql(firstSlotIdx + 1);",
+                  "    pm.expect(body.timeSlots[0].doctorId).to.eql(doctorId);",
+                  "    pm.expect(body.timeSlots[0].dateTimeStart).to.eql(\"2024-02-10T10:00:00\");",
+                  "    pm.expect(body.timeSlots[0].dateTimeEnd).to.eql(\"2024-02-10T11:00:00\");",
+                  "    pm.expect(body.timeSlots[0].doctorFullName).is.not.empty;",
+                  "    pm.expect(body.timeSlots[0].doctorQualification).is.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{schedulePort}}{{urlPrefix}}/reserve/free?dateFrom=2024-02-10T09:00:00&doctorId={{doctorId}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{schedulePort}}{{urlPrefix}}",
+              "path": [
+                "reserve",
+                "free"
+              ],
+              "query": [
+                {
+                  "key": "dateFrom",
+                  "value": "2024-02-10T09:00:00"
+                },
+                {
+                  "key": "doctorId",
+                  "value": "{{doctorId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "put_slots_plus",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body).to.eq(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"doctorId\": {{doctorId}},\n    \"dateTimeStart\": \"2024-02-10T12:00:00\",\n    \"dateTimeEnd\": \"2024-02-10T13:00:00\",\n    \"status\": \"FREE\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{schedulePort}}{{urlPrefix}}/manage/slot",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{schedulePort}}{{urlPrefix}}",
+              "path": [
+                "manage",
+                "slot"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_all_slots_end",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "firstSlotIdx = parseInt(pm.collectionVariables.get(\"firstSlotIdx\"))",
+                  "doctorId = parseInt(pm.collectionVariables.get(\"doctorId\"))",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.length).to.eq(3);",
+                  "",
+                  "    pm.expect(body[0].slotId).to.eql(firstSlotIdx);",
+                  "    pm.expect(body[0].doctorId).to.eql(doctorId);",
+                  "    pm.expect(body[0].dateTimeStart).to.eql(\"2024-02-10T09:00:00\");",
+                  "    pm.expect(body[0].dateTimeEnd).to.eql(\"2024-02-10T10:00:00\");",
+                  "    pm.expect(body[0].status).to.eql(\"RESERVED\");",
+                  "",
+                  "    pm.expect(body[1].slotId).to.eql(firstSlotIdx + 1);",
+                  "    pm.expect(body[1].doctorId).to.eql(doctorId);",
+                  "    pm.expect(body[1].dateTimeStart).to.eql(\"2024-02-10T10:00:00\");",
+                  "    pm.expect(body[1].dateTimeEnd).to.eql(\"2024-02-10T11:00:00\");",
+                  "    pm.expect(body[1].status).to.eql(\"FREE\");",
+                  "",
+                  "    pm.expect(body[2].slotId).to.eql(firstSlotIdx + 2);",
+                  "    pm.expect(body[2].doctorId).to.eql(doctorId);",
+                  "    pm.expect(body[2].dateTimeStart).to.eql(\"2024-02-10T12:00:00\");",
+                  "    pm.expect(body[2].dateTimeEnd).to.eql(\"2024-02-10T13:00:00\");",
+                  "    pm.expect(body[2].status).to.eql(\"FREE\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{schedulePort}}{{urlPrefix}}/manage/slot?doctorId={{doctorId}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{schedulePort}}{{urlPrefix}}",
+              "path": [
+                "manage",
+                "slot"
+              ],
+              "query": [
+                {
+                  "key": "doctorId",
+                  "value": "{{doctorId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "confirm_slot",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body).to.eq(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n    {\n        \"slotId\": {{firstSlotIdx}},\n        \"customerId\": 33,\n        \"doctorId\": {{doctorId}},\n        \"dateTimeStart\": \"2024-02-10T09:00:00\",\n        \"dateTimeEnd\": \"2024-02-10T10:00:00\",\n        \"status\": \"CONFIRMED\"\n    }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{schedulePort}}{{urlPrefix}}/manage/slot",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{schedulePort}}{{urlPrefix}}",
+              "path": [
+                "manage",
+                "slot"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_confirmed_slot",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "firstSlotIdx = parseInt(pm.collectionVariables.get(\"firstSlotIdx\"))",
+                  "doctorId = parseInt(pm.collectionVariables.get(\"doctorId\"))",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.slotId).to.eql(firstSlotIdx);",
+                  "    pm.expect(body.doctorId).to.eql(doctorId);",
+                  "    pm.expect(body.dateTimeStart).to.eql(\"2024-02-10T09:00:00\");",
+                  "    pm.expect(body.dateTimeEnd).to.eql(\"2024-02-10T10:00:00\");",
+                  "    pm.expect(body.status).to.eql(\"CONFIRMED\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{schedulePort}}{{urlPrefix}}/reserve/{{firstSlotIdx}}",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{schedulePort}}{{urlPrefix}}",
+              "path": [
+                "reserve",
+                "{{firstSlotIdx}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "release_slot",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "firstSlotIdx = parseInt(pm.collectionVariables.get(\"firstSlotIdx\"))",
+                  "doctorId = parseInt(pm.collectionVariables.get(\"doctorId\"))",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.slotId).to.eql(firstSlotIdx);",
+                  "    pm.expect(body.doctorId).to.eql(doctorId);",
+                  "    pm.expect(body.dateTimeStart).to.eql(\"2024-02-10T09:00:00\");",
+                  "    pm.expect(body.dateTimeEnd).to.eql(\"2024-02-10T10:00:00\");",
+                  "    pm.expect(body.status).to.eql(\"FREE\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"slotId\": {{firstSlotIdx}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{schedulePort}}{{urlPrefix}}/reserve/release",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{schedulePort}}{{urlPrefix}}",
+              "path": [
+                "reserve",
+                "release"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "authService",
+      "item": [
+        {
+          "name": "access_forbidden_no_auth",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{authPort}}{{urlPrefix}}/auth/validate",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{authPort}}{{urlPrefix}}",
+              "path": [
+                "auth",
+                "validate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "access_forbidden_wrong_jwt",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJab3JhMzlAaG90bWFpbC5jb20iLCJpYXQiOjE3MDgwNzY0MzMsImV4cCI6MTcwODA3Nzg3M30.KSlAWz6bn6mmiZWz-ipsoKxwINjrfOnE671X-ATmGW0",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{authPort}}{{urlPrefix}}/auth/validate",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{authPort}}{{urlPrefix}}",
+              "path": [
+                "auth",
+                "validate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "signUp user",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('authLogin', pm.variables.replaceIn('{{$randomEmail}}'));",
+                  "pm.collectionVariables.set('authUserId', 0);",
+                  "pm.collectionVariables.set('authRole', 'PERSONNEL');",
+                  "pm.collectionVariables.set('authPassword', pm.variables.replaceIn('{{$guid}}'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.jwt).is.not.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"login\": \"{{authLogin}}\",\n    \"userId\": \"{{authUserId}}\",\n    \"role\": \"{{authRole}}\",\n    \"password\": \"{{authPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{authPort}}{{urlPrefix}}/auth/register",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{authPort}}{{urlPrefix}}",
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "signUp again",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"login\": \"{{authLogin}}\",\n    \"userId\": \"{{authUserId}}\",\n    \"role\": \"{{authRole}}\",\n    \"password\": \"{{authPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{authPort}}{{urlPrefix}}/auth/register",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{authPort}}{{urlPrefix}}",
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "signUp user2",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const moment = require('moment');",
+                  "",
+                  "pm.collectionVariables.set('authLogin', pm.variables.replaceIn('{{$randomEmail}}'));",
+                  "pm.collectionVariables.set('authUserId', 0);",
+                  "pm.collectionVariables.set('authRole', 'CUSTOMER');",
+                  "pm.collectionVariables.set('authPassword', pm.variables.replaceIn('{{$guid}}'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test(\"JSON test\", () => {",
+                  "    pm.expect(body.jwt).is.not.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"login\": \"{{authLogin}}\",\n    \"userId\": \"{{authUserId}}\",\n    \"role\": \"{{authRole}}\",\n    \"password\": \"{{authPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{authPort}}{{urlPrefix}}/auth/register",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{authPort}}{{urlPrefix}}",
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "authentication_wrong",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "wrong_token",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"login\": \"-1\",\n    \"password\": \"-1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{authPort}}{{urlPrefix}}/auth/login/pass",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{authPort}}{{urlPrefix}}",
+              "path": [
+                "auth",
+                "login",
+                "pass"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "authenticaition_passed",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('jwt', body.jwt);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"login\": \"{{authLogin}}\",\n    \"password\": \"{{authPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{host}}:{{authPort}}{{urlPrefix}}/auth/login/pass",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{authPort}}{{urlPrefix}}",
+              "path": [
+                "auth",
+                "login",
+                "pass"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "authenticaition_validate",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{authPort}}{{urlPrefix}}/auth/validate",
+              "protocol": "http",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{authPort}}{{urlPrefix}}",
+              "path": [
+                "auth",
+                "validate"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "test1Summary",
+      "value": ""
+    },
+    {
+      "key": "test1Description",
+      "value": ""
+    },
+    {
+      "key": "test1Date",
+      "value": ""
+    },
+    {
+      "key": "test1Id",
+      "value": ""
+    },
+    {
+      "key": "test2Summary",
+      "value": ""
+    },
+    {
+      "key": "test2Description",
+      "value": ""
+    },
+    {
+      "key": "test2Date",
+      "value": ""
+    },
+    {
+      "key": "test2Id",
+      "value": ""
+    },
+    {
+      "key": "test1ResultDescription",
+      "value": ""
+    },
+    {
+      "key": "test1ResultDate",
+      "value": ""
+    },
+    {
+      "key": "test2ResultDescription",
+      "value": ""
+    },
+    {
+      "key": "test2ResultDate",
+      "value": ""
+    },
+    {
+      "key": "procedure1Summary",
+      "value": ""
+    },
+    {
+      "key": "procedure1Description",
+      "value": ""
+    },
+    {
+      "key": "procedure1Date",
+      "value": ""
+    },
+    {
+      "key": "procedure1Id",
+      "value": ""
+    },
+    {
+      "key": "procedure2Summary",
+      "value": ""
+    },
+    {
+      "key": "procedure2Description",
+      "value": ""
+    },
+    {
+      "key": "procedure2Date",
+      "value": ""
+    },
+    {
+      "key": "procedure2Id",
+      "value": ""
+    },
+    {
+      "key": "employeeId",
+      "value": ""
+    },
+    {
+      "key": "employeeFirstName",
+      "value": ""
+    },
+    {
+      "key": "employeeLastName",
+      "value": ""
+    },
+    {
+      "key": "employeeGender",
+      "value": ""
+    },
+    {
+      "key": "employeeDocumentId",
+      "value": ""
+    },
+    {
+      "key": "employeeBirthDate",
+      "value": ""
+    },
+    {
+      "key": "employeeEmail",
+      "value": ""
+    },
+    {
+      "key": "employeePhone",
+      "value": ""
+    },
+    {
+      "key": "employeeQualification",
+      "value": ""
+    },
+    {
+      "key": "employeeLogin",
+      "value": ""
+    },
+    {
+      "key": "authLogin",
+      "value": ""
+    },
+    {
+      "key": "authUserId",
+      "value": ""
+    },
+    {
+      "key": "doctorId",
+      "value": ""
+    },
+    {
+      "key": "firstSlotIdx",
+      "value": ""
+    }
+  ]
+}

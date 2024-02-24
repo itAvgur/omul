@@ -1,0 +1,369 @@
+openapi: 3.0.1
+
+info:
+  title: Schedule service
+  version: 0.0.1
+  description: Service for managing dentist's schedule
+  contact:
+    name: Yury Melnikov
+    email: itavgur@gmail.com
+
+servers:
+  - url: 'http://localhost:8080'
+
+paths:
+
+  /v1/reserve/free:
+    get:
+      summary: Get free time slots
+      operationId: getFreeTimeSlotsV1
+      tags:
+        - reserveSlots
+      parameters:
+        - name: dateFrom
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: doctorId
+          in: query
+          required: false
+          schema:
+            type: number
+            format: int32
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarTimeSlots"
+
+  /v1/reserve/{slotId}:
+    get:
+      summary: Get time slot by ID
+      operationId: getReservedTimeSlotV1
+      tags:
+        - reserveSlots
+      parameters:
+        - name: slotId
+          required: true
+          in: path
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservedTimeSlotResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+
+  /v1/reserve:
+    post:
+      summary: Reserve time slot
+      operationId: reserveFreeTimeSlotV1
+      tags:
+        - reserveSlots
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReserveTimeSlotRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservedTimeSlotResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+  /v1/reserve/release:
+    patch:
+      summary: Release time slot
+      operationId: releaseFreeTimeSlotV1
+      tags:
+        - reserveSlots
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReleaseTimeSlotRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeSlotResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+
+  /v1/manage/slot/{slotId}:
+    get:
+      summary: Get time slot by Id
+      operationId: getTimeSlotV1
+      tags:
+        - manageSlots
+      parameters:
+        - name: slotId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeSlotResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+
+  /v1/manage/slot:
+    get:
+      summary: Get all time slots
+      operationId: getAllTimeSlotsV1
+      tags:
+        - manageSlots
+      parameters:
+        - name: dateFrom
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: doctorId
+          in: query
+          required: false
+          schema:
+            type: number
+            format: int32
+        - name: customerId
+          in: query
+          required: false
+          schema:
+            type: number
+            format: int32
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TimeSlotResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+    put:
+      summary: Add times slot information
+      operationId: addTimeSlotsInfoV1
+      tags:
+        - manageSlots
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/ManageTimeSlotRequest"
+      responses:
+        200:
+          description: OK
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+
+components:
+  schemas:
+    CalendarTimeSlots:
+      type: object
+      properties:
+        doctorId:
+          type: integer
+          format: int32
+        dateFrom:
+          type: string
+          format: date
+        dateTo:
+          type: string
+          format: date
+        timeSlots:
+          type: array
+          items:
+            type: object
+            properties:
+              slotId:
+                type: integer
+                format: int64
+              dateTimeStart:
+                type: string
+                format: date-time
+              dateTimeEnd:
+                type: string
+                format: date-time
+              doctorId:
+                type: integer
+              doctorFullName:
+                type: string
+              doctorQualification:
+                type: string
+    ReserveTimeSlotRequest:
+      required:
+        - customerId
+        - slotId
+      type: object
+      properties:
+        customerId:
+          type: integer
+          format: int32
+        slotId:
+          type: integer
+          format: int64
+    ReleaseTimeSlotRequest:
+      required:
+        - slotId
+      type: object
+      properties:
+        slotId:
+          type: integer
+          format: int64
+    ReservedTimeSlotResponse:
+      type: object
+      properties:
+        slotId:
+          type: integer
+          format: int64
+        customerId:
+          type: integer
+          format: int32
+        doctorId:
+          type: integer
+          format: int32
+        doctorFullName:
+          type: string
+        doctorQualification:
+          type: string
+        dateTimeStart:
+          type: string
+          format: date-time
+        dateTimeEnd:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - FREE
+            - RESERVED
+            - CONFIRMED
+    ManageTimeSlotRequest:
+      type: object
+      properties:
+        slotId:
+          type: integer
+          format: int64
+        customerId:
+          type: integer
+          format: int32
+        doctorId:
+          type: integer
+          format: int32
+        dateTimeStart:
+          type: string
+          format: date-time
+        dateTimeEnd:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - FREE
+            - RESERVED
+            - CONFIRMED
+    TimeSlotResponse:
+      type: object
+      properties:
+        slotId:
+          type: integer
+          format: int64
+        customerId:
+          type: integer
+          format: int32
+        doctorId:
+          type: integer
+          format: int32
+        dateTimeStart:
+          type: string
+          format: date-time
+        dateTimeEnd:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - FREE
+            - RESERVED
+            - CONFIRMED
+    StandardErrorMessage:
+      type: object
+      properties:
+        source:
+          type: string
+        httpCode:
+          type: integer
+          format: int32
+        message:
+          type: string
+        stackTrace:
+          type: string
+
+tags:
+  - name: timeSlot

@@ -1,0 +1,241 @@
+openapi: 3.0.1
+
+info:
+  title: Appointment service
+  version: 0.0.1
+  description: Managing appointments for customers
+  contact:
+    name: Yury Melnikov
+    email: itavgur@gmail.com
+
+servers:
+  - url: 'http://localhost:8080'
+
+paths:
+  /v1/appointment/customer:
+    post:
+      summary: Create new appointment for customer
+      operationId: createCustomerAppointmentV1
+      tags:
+        - customerAppointment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentCustomerRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentCustomerResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+    get:
+      summary: Get customer's appointment info
+      operationId: getCustomerAppointmentV1
+      tags:
+        - customerAppointment
+      parameters:
+        - name: appointmentId
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: idempotentKey
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentCustomerResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+    patch:
+      summary: Update existed customer's appointment
+      operationId: updateCustomerAppointmentV1
+      tags:
+        - customerAppointment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentCustomerRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentCustomerResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+    delete:
+      summary: Delete customer's appointment
+      operationId: deleteCustomerAppointmentV1
+      tags:
+        - customerAppointment
+      parameters:
+        - name: appointmentId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        200:
+          description: OK
+        204:
+          description: Already deleted
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+  /v1/appointment/newCustomer:
+    post:
+      summary: Create new appointment for new customer
+      operationId: createNewCustomerAppointmentV1
+      tags:
+        - customerAppointment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentNewCustomerRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentNewCustomerResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+
+components:
+  schemas:
+    AppointmentCustomerRequest:
+      type: object
+      properties:
+        idempotentKey:
+          type: string
+          format: uuid
+        appointmentId:
+          type: integer
+          format: int32
+        customerId:
+          type: integer
+          format: int32
+        timeSlotId:
+          type: integer
+          format: int32
+        status:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          enum:
+            - RECEIVED
+            - IN_PROCESS
+            - CONFIRMED
+            - CANCELED
+    AppointmentCustomerResponse:
+      type: object
+      properties:
+        idempotentKey:
+          type: string
+          format: uuid
+        appointmentId:
+          type: integer
+          format: int32
+        customerId:
+          type: integer
+          format: int32
+        timeSlotId:
+          type: integer
+          format: int32
+        status:
+          type: string
+          enum:
+            - CREATED
+            - IN_PROGRESS
+            - CONFIRMED
+            - CANCELED
+            - CLOSED
+    AppointmentNewCustomerRequest:
+      type: object
+      properties:
+        idempotentKey:
+          type: string
+          format: uuid
+        timeSlotId:
+          type: integer
+          format: int32
+        phone:
+          type: string
+        email:
+          type: string
+    AppointmentNewCustomerResponse:
+      type: object
+      properties:
+        idempotentKey:
+          type: string
+          format: uuid
+        appointmentId:
+          type: integer
+          format: int32
+        customerId:
+          type: integer
+          format: int32
+        timeSlotId:
+          type: integer
+          format: int32
+        status:
+          type: string
+          enum:
+            - RECEIVED
+            - IN_PROCESS
+            - CONFIRMED
+            - CANCELED
+    StandardErrorMessage:
+      type: object
+      properties:
+        source:
+          type: string
+        httpCode:
+          type: integer
+          format: int32
+        message:
+          type: string
+        stackTrace:
+          type: string
+
+tags:
+  - name: customerAppointment

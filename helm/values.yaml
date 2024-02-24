@@ -1,0 +1,195 @@
+customerService:
+  name: customer-service
+  port: 8100
+  appPort: 8080
+  replicaCount: 1
+  image: ygmelnikov/omul_customer
+  imageTag: 0.0.1
+  imagePullPolicy: IfNotPresent
+  db:
+    type: postgres
+    host: host.docker.internal
+    port: 5432
+    schema: customer
+    user: customer
+    pass: Y3VzdG9tZXI=
+  cache:
+    enabled: true
+    provider: redis
+    host: redis-master
+    port: 6379
+  jwt:
+    enabled: false
+    signingKey: b1J1TnBSVUhQQmpmWXVXWWxhYUt0bS9ZVG1GOUlPTXdWSkZsSWZOUHVscz0=
+  probe:
+    livenessInitDelayTime: 60
+    readinessInitDelayTime: 60
+
+scheduleService:
+  name: schedule-service
+  port: 8101
+  appPort: 8080
+  replicaCount: 1
+  image: ygmelnikov/omul_schedule
+  imageTag: 0.0.1
+  imagePullPolicy: IfNotPresent
+  db:
+    type: postgres
+    host: host.docker.internal
+    port: 5432
+    schema: schedule
+    user: schedule
+    pass: c2NoZWR1bGU=
+  cache:
+    enabled: true
+    provider: redis
+    host: redis-master
+    port: 6379
+  jwt:
+    enabled: false
+    signingKey: b1J1TnBSVUhQQmpmWXVXWWxhYUt0bS9ZVG1GOUlPTXdWSkZsSWZOUHVscz0=
+  transport:
+    personnel:
+      type: rest
+      url: http://personnel-service:8102
+
+  probe:
+    livenessInitDelayTime: 60
+    readinessInitDelayTime: 60
+
+personnelService:
+  name: personnel-service
+  port: 8102
+  appPort: 8080
+  replicaCount: 1
+  image: ygmelnikov/omul_personnel
+  imageTag: 0.0.1
+  imagePullPolicy: IfNotPresent
+  db:
+    type: postgres
+    host: host.docker.internal
+    port: 5432
+    schema: personnel
+    user: personnel
+    pass: cGVyc29ubmVs
+  cache:
+    enabled: true
+    provider: redis
+    host: redis-master
+    port: 6379
+  jwt:
+    enabled: false
+    signingKey: b1J1TnBSVUhQQmpmWXVXWWxhYUt0bS9ZVG1GOUlPTXdWSkZsSWZOUHVscz0=
+  probe:
+    livenessInitDelayTime: 60
+    readinessInitDelayTime: 60
+
+appointmentService:
+  name: appointment-service
+  port: 8103
+  appPort: 8080
+  replicaCount: 1
+  image: ygmelnikov/omul_appointment
+  imageTag: 0.0.1
+  imagePullPolicy: IfNotPresent
+  db:
+    type: postgres
+    host: host.docker.internal
+    port: 5432
+    schema: appointment
+    user: appointment
+    pass: YXBwb2ludG1lbnQ=
+  cache:
+    enabled: true
+    provider: redis
+    host: redis-master
+    port: 6379
+  jwt:
+    enabled: false
+    signingKey: b1J1TnBSVUhQQmpmWXVXWWxhYUt0bS9ZVG1GOUlPTXdWSkZsSWZOUHVscz0=
+  transport:
+    type: async
+    customer:
+      type: rest
+      url: http://customer-service:8100
+    schedule:
+      type: rest
+      url: http://schedule-service:8101
+  probe:
+    livenessInitDelayTime: 60
+    readinessInitDelayTime: 60
+
+authService:
+  name: auth-service
+  port: 8105
+  appPort: 8080
+  replicaCount: 1
+  image: ygmelnikov/omul_auth
+  imageTag: 0.0.1
+  imagePullPolicy: IfNotPresent
+  db:
+    type: postgres
+    host: host.docker.internal
+    port: 5432
+    schema: auth
+    user: auth
+    pass: YXV0aA==
+  cache:
+    enabled: true
+    provider: redis
+    host: redis-master
+    port: 6379
+  jwt:
+    signingKey: b1J1TnBSVUhQQmpmWXVXWWxhYUt0bS9ZVG1GOUlPTXdWSkZsSWZOUHVscz0=
+  probe:
+    livenessInitDelayTime: 60
+    readinessInitDelayTime: 60
+
+redis:
+  enabled: true
+  fullnameOverride: redis
+  auth:
+    enabled: false
+  replica:
+    replicaCount: 1
+
+postgresql:
+  enabled: true
+  host: host.docker.internal
+  user: root
+  pass: root
+
+ingress:
+  name: api-gateway
+  host: arch.homework
+  paths: [
+    { ruleName: "customer1", path: "/customer(.*)", dest: "/v1/customer$1",
+      service: customer-service, port: 8100, secured: true },
+    { ruleName: "customer2",path: "/procedure(.*)", dest: "/v1/procedure$1",
+      service: customer-service, port: 8100, secured: true },
+    { ruleName: "customer3",path: "/test(.*)", dest: "/v1/test$1",
+      service: customer-service, port: 8100, secured: true },
+    { ruleName: "schedule1",path: "/manage(.*)", dest: "/v1/manage$1",
+      service: schedule-service, port: 8101, secured: true },
+    { ruleName: "schedule2",path: "/reserve(.*)", dest: "/v1/reserve$1",
+      service: schedule-service, port: 8101, secured: true },
+    { ruleName: "personnel1",path: "/employee(.*)", dest: "/v1/employee$1",
+      service: personnel-service, port: 8102, secured: true },
+    { ruleName: "appointment1",path: "/appointment(.*)", dest: "/v1/appointment$1",
+      service: appointment-service, port: 8103, secured: true },
+    { ruleName: "auth1",path: "/auth(.*)", dest: "/v1/auth$1",
+      service: auth-service, port: 8105 }
+
+  ]
+
+  authValidationUrl: "http://arch.homework/auth/validate"
+
+serviceAccount:
+  create: false
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+

@@ -1,0 +1,191 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.scheduleService.name }}
+data:
+  DB_TYPE: '{{.Values.scheduleService.db.type}}'
+  PG_HOST: '{{.Values.scheduleService.db.host}}'
+  PG_PORT: '{{.Values.scheduleService.db.port}}'
+  PG_SCHEMA: '{{.Values.scheduleService.db.schema}}'
+  PG_USER: '{{.Values.scheduleService.db.user}}'
+  JWT_ENABLED: '{{.Values.scheduleService.jwt.enabled}}'
+  CACHE_ENABLED: '{{.Values.scheduleService.cache.enabled}}'
+  CACHE_PROVIDER: '{{.Values.scheduleService.cache.provider}}'
+  CACHE_HOST: '{{.Values.scheduleService.cache.host}}'
+  CACHE_PORT: '{{.Values.scheduleService.cache.port}}'
+  TRANSPORT_PERSONNEL_TYPE: '{{.Values.scheduleService.transport.personnel.type}}'
+  TRANSPORT_PERSONNEL_REST_URL: '{{.Values.scheduleService.transport.personnel.url}}'
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.scheduleService.name }}
+type: Opaque
+data:
+  PG_PASS: {{.Values.scheduleService.db.pass}}
+  JWT_SIGNING_KEY: {{.Values.scheduleService.jwt.signingKey}}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.scheduleService.name }}
+  labels:
+    {{- include "schedule.labels" . | nindent 4 }}
+spec:
+  type: LoadBalancer
+  ports:
+    - port: {{ .Values.scheduleService.port }}
+      targetPort: {{ .Values.scheduleService.appPort }}
+      protocol: TCP
+      name: schedule-svc-port
+  selector:
+    {{- include "schedule.selectorLabels" . | nindent 4 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.scheduleService.name }}
+  labels:
+    {{- include "schedule.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.scheduleService.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "schedule.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "schedule.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.postgresql.enabled }}
+      initContainers:
+        - name: check-postgres-ready
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - until pg_isready -h {{.Values.postgresql.host}};
+              do echo waiting for database to start; sleep 3; done;
+      {{- end}}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "omul.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.scheduleService.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.scheduleService.image }}:{{ .Values.scheduleService.imageTag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.scheduleService.imagePullPolicy }}
+          ports:
+            - name: schedule-port
+              containerPort: {{ .Values.scheduleService.appPort }}
+              protocol: TCP
+          env:
+            - name: SCHEDULE_SERVICE_PORT
+              value: "{{ .Values.scheduleService.appPort }}"
+            - name: SCHEDULE_DB_TYPE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.scheduleService.name }}
+                  key: DB_TYPE
+            - name: SCHEDULE_PG_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.scheduleService.name }}
+                  key: PG_HOST
+            - name: SCHEDULE_PG_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.scheduleService.name }}
+                  key: PG_PORT
+            - name: SCHEDULE_PG_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.scheduleService.name }}
+                  key: PG_SCHEMA
+            - name: SCHEDULE_PG_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.scheduleService.name }}
+                  key: PG_USER
+            - name: SCHEDULE_PG_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.scheduleService.name }}
+                  key: PG_PASS
+            - name: SCHEDULE_CACHE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.scheduleService.name }}
+                  key: PG_USER
+            - name: SCHEDULE_CACHE_PROVIDER
+              value: "{{.Values.scheduleService.cache.provider}}"
+            - name: SCHEDULE_CACHE_HOST
+              value: "{{.Values.scheduleService.cache.host}}"
+            - name: SCHEDULE_CACHE_PORT
+              value: "{{.Values.scheduleService.cache.port}}"
+            - name: SCHEDULE_JWT_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.scheduleService.name }}
+                  key: JWT_ENABLED
+            - name: SCHEDULE_JWT_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.scheduleService.name }}
+                  key: JWT_SIGNING_KEY
+            - name: SCHEDULE_TRANSPORT_PERSONNEL_TYPE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.scheduleService.name }}
+                  key: TRANSPORT_PERSONNEL_TYPE
+            - name: SCHEDULE_TRANSPORT_PERSONNEL_REST_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.scheduleService.name }}
+                  key: TRANSPORT_PERSONNEL_REST_URL
+          livenessProbe:
+            initialDelaySeconds: {{ .Values.scheduleService.probe.livenessInitDelayTime}}
+            httpGet:
+              port: {{ .Values.scheduleService.appPort }}
+              path: /actuator/health
+          readinessProbe:
+            initialDelaySeconds: {{ .Values.scheduleService.probe.readinessInitDelayTime}}
+            httpGet:
+              port: {{ .Values.scheduleService.appPort }}
+              path: /actuator/health
+          resources:
+            {{- toYaml .Values.scheduleService.resources | nindent 12 }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

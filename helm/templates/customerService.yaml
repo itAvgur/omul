@@ -1,0 +1,188 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.customerService.name }}
+data:
+  DB_TYPE: '{{.Values.customerService.db.type}}'
+  PG_HOST: '{{.Values.customerService.db.host}}'
+  PG_PORT: '{{.Values.customerService.db.port}}'
+  PG_SCHEMA: '{{.Values.customerService.db.schema}}'
+  PG_USER: '{{.Values.customerService.db.user}}'
+  JWT_ENABLED: '{{.Values.customerService.jwt.enabled}}'
+  CACHE_ENABLED: '{{.Values.customerService.cache.enabled}}'
+  CACHE_PROVIDER: '{{.Values.customerService.cache.provider}}'
+  CACHE_HOST: '{{.Values.customerService.cache.host}}'
+  CACHE_PORT: '{{.Values.customerService.cache.port}}'
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.customerService.name }}
+type: Opaque
+data:
+  PG_PASS: {{.Values.customerService.db.pass}}
+  JWT_SIGNING_KEY: {{.Values.customerService.jwt.signingKey}}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.customerService.name }}
+  labels:
+    {{- include "customer.labels" . | nindent 4 }}
+spec:
+  type: LoadBalancer
+  ports:
+    - port: {{ .Values.customerService.port }}
+      targetPort: {{ .Values.customerService.appPort }}
+      protocol: TCP
+      name: customer-svc-port
+  selector:
+    {{- include "customer.selectorLabels" . | nindent 4 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.customerService.name }}
+  labels:
+    {{- include "customer.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.customerService.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "customer.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "customer.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.postgresql.enabled }}
+      initContainers:
+        - name: check-postgres-ready
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - until pg_isready -h {{.Values.postgresql.host}};
+              do echo waiting for database to start; sleep 3; done;
+      {{- end}}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "omul.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.customerService.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.customerService.image }}:{{ .Values.customerService.imageTag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.customerService.imagePullPolicy }}
+          ports:
+            - name: customer-port
+              containerPort: {{ .Values.customerService.appPort }}
+              protocol: TCP
+          env:
+            - name: CUSTOMER_SERVICE_PORT
+              value: "{{ .Values.customerService.appPort }}"
+            - name: CUSTOMER_DB_TYPE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.customerService.name }}
+                  key: DB_TYPE
+            - name: CUSTOMER_PG_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.customerService.name }}
+                  key: PG_HOST
+            - name: CUSTOMER_PG_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.customerService.name }}
+                  key: PG_PORT
+            - name: CUSTOMER_PG_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.customerService.name }}
+                  key: PG_SCHEMA
+            - name: CUSTOMER_PG_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.customerService.name }}
+                  key: PG_USER
+            - name: CUSTOMER_PG_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.customerService.name }}
+                  key: PG_PASS
+            - name: CUSTOMER_CACHE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.customerService.name }}
+                  key: CACHE_ENABLED
+            - name: CUSTOMER_CACHE_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.customerService.name }}
+                  key: CACHE_PROVIDER
+            - name: CUSTOMER_CACHE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.customerService.name }}
+                  key: CACHE_HOST
+            - name: CUSTOMER_CACHE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.customerService.name }}
+                  key: CACHE_PORT
+            - name: CUSTOMER_JWT_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.customerService.name }}
+                  key: JWT_ENABLED
+            - name: CUSTOMER_JWT_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.customerService.name }}
+                  key: JWT_SIGNING_KEY
+          livenessProbe:
+            initialDelaySeconds: {{ .Values.customerService.probe.livenessInitDelayTime}}
+            httpGet:
+              port: {{ .Values.customerService.appPort }}
+              path: /actuator/health
+          readinessProbe:
+            initialDelaySeconds: {{ .Values.customerService.probe.readinessInitDelayTime}}
+            httpGet:
+              port: {{ .Values.customerService.appPort }}
+              path: /actuator/health
+          resources:
+            {{- toYaml .Values.customerService.resources | nindent 12 }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

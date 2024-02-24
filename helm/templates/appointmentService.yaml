@@ -1,0 +1,218 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.appointmentService.name }}
+data:
+  DB_TYPE: '{{.Values.appointmentService.db.type}}'
+  PG_HOST: '{{.Values.appointmentService.db.host}}'
+  PG_PORT: '{{.Values.appointmentService.db.port}}'
+  PG_SCHEMA: '{{.Values.appointmentService.db.schema}}'
+  PG_USER: '{{.Values.appointmentService.db.user}}'
+  JWT_ENABLED: '{{.Values.appointmentService.jwt.enabled}}'
+  CACHE_ENABLED: '{{.Values.appointmentService.cache.enabled}}'
+  CACHE_PROVIDER: '{{.Values.appointmentService.cache.provider}}'
+  CACHE_HOST: '{{.Values.appointmentService.cache.host}}'
+  CACHE_PORT: '{{.Values.appointmentService.cache.port}}'
+  TRANSPORT_TYPE: '{{.Values.appointmentService.transport.type}}'
+  TRANSPORT_CUSTOMER_TYPE: '{{.Values.appointmentService.transport.customer.type}}'
+  TRANSPORT_CUSTOMER_URL: '{{.Values.appointmentService.transport.customer.url}}'
+  TRANSPORT_SCHEDULE_TYPE: '{{.Values.appointmentService.transport.schedule.type}}'
+  TRANSPORT_SCHEDULE_URL: '{{.Values.appointmentService.transport.schedule.url}}'
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.appointmentService.name }}
+type: Opaque
+data:
+  PG_PASS: {{.Values.appointmentService.db.pass}}
+  JWT_SIGNING_KEY: {{.Values.appointmentService.jwt.signingKey}}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.appointmentService.name }}
+  labels:
+    {{- include "appointment.labels" . | nindent 4 }}
+spec:
+  type: LoadBalancer
+  ports:
+    - port: {{ .Values.appointmentService.port }}
+      targetPort: {{ .Values.appointmentService.appPort }}
+      protocol: TCP
+      name: appointment-svc-port
+  selector:
+    {{- include "appointment.selectorLabels" . | nindent 4 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.appointmentService.name }}
+  labels:
+    {{- include "appointment.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.appointmentService.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "appointment.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "appointment.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.postgresql.enabled }}
+      initContainers:
+        - name: check-postgres-ready
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - until pg_isready -h {{.Values.postgresql.host}};
+              do echo waiting for database to start; sleep 3; done;
+      {{- end}}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "omul.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.appointmentService.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.appointmentService.image }}:{{ .Values.appointmentService.imageTag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.appointmentService.imagePullPolicy }}
+          ports:
+            - name: appoint-port
+              containerPort: {{ .Values.appointmentService.appPort }}
+              protocol: TCP
+          env:
+            - name: APPOINTMENT_SERVICE_PORT
+              value: "{{ .Values.appointmentService.appPort }}"
+            - name: APPOINTMENT_DB_TYPE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: DB_TYPE
+            - name: APPOINTMENT_PG_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: PG_HOST
+            - name: APPOINTMENT_PG_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: PG_PORT
+            - name: APPOINTMENT_PG_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: PG_SCHEMA
+            - name: APPOINTMENT_PG_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: PG_USER
+            - name: APPOINTMENT_PG_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: PG_PASS
+            - name: APPOINTMENT_CACHE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: CACHE_ENABLED
+            - name: APPOINTMENT_CACHE_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: CACHE_PROVIDER
+            - name: APPOINTMENT_CACHE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: CACHE_HOST
+            - name: APPOINTMENT_CACHE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: CACHE_PORT
+            - name: APPOINTMENT_JWT_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: JWT_ENABLED
+            - name: APPOINTMENT_JWT_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: JWT_SIGNING_KEY
+            - name: APPOINTMENT_TRANSPORT_TYPE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: TRANSPORT_TYPE
+            - name: APPOINTMENT_TRANSPORT_CUSTOMER_TYPE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: TRANSPORT_CUSTOMER_TYPE
+            - name: APPOINTMENT_TRANSPORT_CUSTOMER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: TRANSPORT_CUSTOMER_URL
+            - name: APPOINTMENT_TRANSPORT_SCHEDULE_TYPE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: TRANSPORT_SCHEDULE_TYPE
+            - name: APPOINTMENT_TRANSPORT_SCHEDULE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.appointmentService.name }}
+                  key: TRANSPORT_SCHEDULE_URL
+          livenessProbe:
+            initialDelaySeconds: {{ .Values.appointmentService.probe.livenessInitDelayTime}}
+            httpGet:
+              port: {{ .Values.appointmentService.appPort }}
+              path: /actuator/health
+          readinessProbe:
+            initialDelaySeconds: {{ .Values.appointmentService.probe.readinessInitDelayTime}}
+            httpGet:
+              port: {{ .Values.appointmentService.appPort }}
+              path: /actuator/health
+          resources:
+            {{- toYaml .Values.appointmentService.resources | nindent 12 }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
