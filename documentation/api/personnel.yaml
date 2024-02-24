@@ -1,0 +1,177 @@
+openapi: 3.0.1
+
+info:
+  title: Personnel service
+  version: 0.0.1
+  description: Managing personnel info
+  contact:
+    name: Yury Melnikov
+    email: itavgur@gmail.com
+
+servers:
+  - url: 'http://localhost:8080'
+
+paths:
+  /v1/employee:
+    post:
+      summary: Create employee
+      operationId: createEmployeeV1
+      tags:
+        - employeeInfo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmployeeDataRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeDataResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+    get:
+      summary: Get employee info
+      operationId: getEmployeeV1
+      tags:
+        - employeeInfo
+      parameters:
+        - name: employeeId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeDataResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+    put:
+      summary: Update employee personal data
+      operationId: updateEmployeeV1
+      tags:
+        - employeeInfo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmployeeDataRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeDataResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+    delete:
+      summary: Delete employee
+      description: Mark employee info as deleted
+      operationId: deleteEmployeeV1
+      tags:
+        - employeeInfo
+      parameters:
+        - name: employeeId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        200:
+          description: OK
+        204:
+          description: Already deleted
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+
+components:
+  schemas:
+    EmployeeDataRequest:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+          format: int32
+        email:
+          type: string
+        phone:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        gender:
+          type: string
+          enum:
+            - MALE
+            - FEMALE
+        documentId:
+          type: string
+        birthDay:
+          type: string
+          format: date
+        qualification:
+          type: string
+    EmployeeDataResponse:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+          format: int32
+        email:
+          type: string
+        phone:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        gender:
+          type: string
+          enum:
+            - MALE
+            - FEMALE
+        documentId:
+          type: string
+        birthDay:
+          type: string
+          format: date
+    StandardErrorMessage:
+      type: object
+      properties:
+        source:
+          type: string
+        httpCode:
+          type: integer
+          format: int32
+        message:
+          type: string
+
+tags:
+  - name: employeeInfo

@@ -1,0 +1,207 @@
+openapi: 3.0.1
+
+info:
+  title: Notification service
+  version: 0.0.1
+  description: Notification management
+  contact:
+    name: Yury Melnikov
+    email: itavgur@gmail.com
+
+servers:
+  - url: 'http://localhost:8080'
+
+paths:
+  /v1/notification/appointment:
+  /v1/notification/customer:
+    get:
+      summary: Your GET endpoint
+      description: Get free slot for one month
+      operationId: getFreeTimeSlots-v1
+      tags:
+        - timeSlot
+      parameters:
+        - name: dateFrom
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: doctorId
+          in: query
+          required: false
+          schema:
+            type: number
+            format: int32
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarTimeSlot"
+  /v1/slots/reserve/all:
+    get:
+      summary: get all time slots
+      description: Get information about reserved time slots
+      operationId: getReservedTimeSlots-v1
+      tags:
+        - timeSlot
+      parameters:
+        - name: dateFrom
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: doctorId
+          in: query
+          required: false
+          schema:
+            type: number
+            format: int32
+        - name: customerId
+          in: query
+          required: false
+          schema:
+            type: number
+            format: int32
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReservedTimeSlotResponse"
+        400:
+          description: Bad Request
+  /v1/slots/reserve/{slotId}:
+    get:
+      summary: get time slot
+      description: Get information about reserved time slot
+      operationId: getReservedTimeSlot-v1
+      tags:
+        - timeSlot
+      parameters:
+        - name: slotId
+          required: true
+          in: path
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservedTimeSlotResponse"
+        400:
+          description: Bad Request
+    post:
+      summary: Reserve time slot
+      description: Reserve time slot for client (idempotent)
+      operationId: reserveFreeTimeSlot-v1
+      tags:
+        - timeSlot
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReserveSlotRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservedTimeSlotResponse"
+        400:
+          description: Bad Request
+
+components:
+  schemas:
+    CalendarTimeSlot:
+      type: object
+      properties:
+        dateFrom:
+          type: string
+          format: date
+        dateTo:
+          type: string
+          format: date
+        calendar:
+          type: array
+          items:
+            type: object
+            properties:
+              slotId:
+                type: integer
+                format: int64
+              dateTime:
+                type: string
+              doctorId:
+                type: integer
+              doctorFullName:
+                type: string
+              doctorQualification:
+                type: string
+      example:
+        simpleExample:
+          value:
+            dateFrom: '2019-08-24'
+            dateTo: '2019-08-25'
+            calendar:
+              - dateTime: string
+                doctorId: 12
+                doctorFullName: Ivan Ivanov
+                doctorQualification: First category
+    ReserveSlotRequest:
+      required:
+        - userId
+        - slotId
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int32
+        slotId:
+          type: integer
+          format: int64
+    ReservedTimeSlotResponse:
+      type: object
+      properties:
+        slotId:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int32
+        doctorId:
+          type: integer
+          format: int32
+        dateTime:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - PRE_ORDER
+            - RESERVED
+
+tags:
+  - name: timeSlot

@@ -1,0 +1,182 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.authService.name }}
+data:
+  DB_TYPE: '{{.Values.authService.db.type}}'
+  PG_HOST: '{{.Values.authService.db.host}}'
+  PG_PORT: '{{.Values.authService.db.port}}'
+  PG_SCHEMA: '{{.Values.authService.db.schema}}'
+  PG_USER: '{{.Values.authService.db.user}}'
+  CACHE_ENABLED: '{{.Values.authService.cache.enabled}}'
+  CACHE_PROVIDER: '{{.Values.authService.cache.provider}}'
+  CACHE_HOST: '{{.Values.authService.cache.host}}'
+  CACHE_PORT: '{{.Values.authService.cache.port}}'
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.authService.name }}
+type: Opaque
+data:
+  PG_PASS: {{.Values.authService.db.pass}}
+  JWT_SIGNING_KEY: {{.Values.authService.jwt.signingKey}}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.authService.name }}
+  labels:
+    {{- include "auth.labels" . | nindent 4 }}
+spec:
+  type: LoadBalancer
+  ports:
+    - port: {{ .Values.authService.port }}
+      targetPort: {{ .Values.authService.appPort }}
+      protocol: TCP
+      name: auth-svc-port
+  selector:
+    {{- include "auth.selectorLabels" . | nindent 4 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.authService.name }}
+  labels:
+    {{- include "auth.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.authService.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "auth.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "auth.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.postgresql.enabled }}
+      initContainers:
+        - name: check-postgres-ready
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - until pg_isready -h {{.Values.postgresql.host}};
+              do echo waiting for database to start; sleep 3; done;
+      {{- end}}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "omul.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.authService.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.authService.image }}:{{ .Values.authService.imageTag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.authService.imagePullPolicy }}
+          ports:
+            - name: auth-port
+              containerPort: {{ .Values.authService.appPort }}
+              protocol: TCP
+          env:
+            - name: AUTH_SERVICE_PORT
+              value: "{{ .Values.authService.appPort }}"
+            - name: DB_TYPE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.authService.name }}
+                  key: DB_TYPE
+            - name: AUTH_PG_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.authService.name }}
+                  key: PG_HOST
+            - name: AUTH_PG_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.authService.name }}
+                  key: PG_PORT
+            - name: AUTH_PG_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.authService.name }}
+                  key: PG_SCHEMA
+            - name: AUTH_PG_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.authService.name }}
+                  key: PG_USER
+            - name: AUTH_PG_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.authService.name }}
+                  key: PG_PASS
+            - name: AUTH_CACHE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.authService.name }}
+                  key: CACHE_ENABLED
+            - name: AUTH_CACHE_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.authService.name }}
+                  key: CACHE_PROVIDER
+            - name: AUTH_CACHE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.authService.name }}
+                  key: CACHE_HOST
+            - name: AUTH_CACHE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.authService.name }}
+                  key: CACHE_PORT
+            - name: AUTH_JWT_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.authService.name }}
+                  key: JWT_SIGNING_KEY
+          livenessProbe:
+            initialDelaySeconds: {{ .Values.authService.probe.livenessInitDelayTime}}
+            httpGet:
+              port: {{ .Values.authService.appPort }}
+              path: /actuator/health
+          readinessProbe:
+            initialDelaySeconds: {{ .Values.authService.probe.readinessInitDelayTime}}
+            httpGet:
+              port: {{ .Values.authService.appPort }}
+              path: /actuator/health
+          resources:
+            {{- toYaml .Values.authService.resources | nindent 12 }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

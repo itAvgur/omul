@@ -1,0 +1,225 @@
+{{- if .Values.postgresql.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-db-auth
+spec:
+  template:
+    metadata:
+      name: init-db-auth
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: check-db
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - until pg_isready -h {{.Values.postgresql.host}};
+              do echo waiting for database to start; sleep 3; done;
+      containers:
+        - name: init-auth-schema
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - psql postgres://{{.Values.postgresql.user}}:{{.Values.postgresql.pass}}@{{.Values.postgresql.host}}/omul << 'EOF'
+
+              DO
+              $do$
+              BEGIN
+              IF EXISTS (
+              SELECT FROM pg_user WHERE usename = '{{.Values.authService.db.user}}') THEN
+              RAISE NOTICE 'Role already exists. Skipping.';
+              ELSE
+              CREATE USER {{.Values.authService.db.user}} WITH PASSWORD '{{.Values.authService.db.pass | b64dec}}';
+              CREATE SCHEMA IF NOT EXISTS {{.Values.authService.db.schema}};
+              GRANT CREATE ON SCHEMA {{.Values.authService.db.schema}} to {{.Values.authService.db.user}};
+              GRANT ALL ON ALL TABLES IN SCHEMA {{.Values.authService.db.schema}} TO {{.Values.authService.db.user}};
+              GRANT USAGE ON SCHEMA {{.Values.authService.db.schema}} TO {{.Values.authService.db.user}};
+              END IF;
+              END
+              $do$;
+
+  backoffLimit: 4
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-db-customer
+spec:
+  template:
+    metadata:
+      name: init-db-customer
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: check-db
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - until pg_isready -h {{.Values.postgresql.host}};
+              do echo waiting for database to start; sleep 3; done;
+      containers:
+        - name: init-customer-schema
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - psql postgres://{{.Values.postgresql.user}}:{{.Values.postgresql.pass}}@{{.Values.postgresql.host}}/omul << 'EOF'
+
+              DO
+              $do$
+              BEGIN
+              IF EXISTS (
+              SELECT FROM pg_user WHERE usename = '{{.Values.customerService.db.user}}') THEN
+              RAISE NOTICE 'Role already exists. Skipping.';
+              ELSE
+              CREATE USER {{.Values.customerService.db.user}} WITH PASSWORD '{{.Values.customerService.db.pass | b64dec}}';
+              CREATE SCHEMA IF NOT EXISTS {{.Values.customerService.db.schema}};
+              GRANT CREATE ON SCHEMA {{.Values.customerService.db.schema}} to {{.Values.customerService.db.user}};
+              GRANT ALL ON ALL TABLES IN SCHEMA {{.Values.customerService.db.schema}} TO {{.Values.customerService.db.user}};
+              GRANT USAGE ON SCHEMA {{.Values.customerService.db.schema}} TO {{.Values.customerService.db.user}};
+              END IF;
+              END
+              $do$;
+
+  backoffLimit: 4
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-db-personnel
+spec:
+  template:
+    metadata:
+      name: init-db-personnel
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: check-db
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - until pg_isready -h {{.Values.postgresql.host}};
+              do echo waiting for database to start; sleep 3; done;
+      containers:
+        - name: init-personnel-schema
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - psql postgres://{{.Values.postgresql.user}}:{{.Values.postgresql.pass}}@{{.Values.postgresql.host}}/omul << 'EOF'
+
+              DO
+              $do$
+              BEGIN
+              IF EXISTS (
+              SELECT FROM pg_user WHERE usename = '{{.Values.personnelService.db.user}}') THEN
+              RAISE NOTICE 'Role already exists. Skipping.';
+              ELSE
+              CREATE USER {{.Values.personnelService.db.user}} WITH PASSWORD '{{.Values.personnelService.db.pass | b64dec}}';
+              CREATE SCHEMA IF NOT EXISTS {{.Values.personnelService.db.schema}};
+              GRANT CREATE ON SCHEMA {{.Values.personnelService.db.schema}} to {{.Values.personnelService.db.user}};
+              GRANT ALL ON ALL TABLES IN SCHEMA {{.Values.personnelService.db.schema}} TO {{.Values.personnelService.db.user}};
+              GRANT USAGE ON SCHEMA {{.Values.personnelService.db.schema}} TO {{.Values.personnelService.db.user}};
+              END IF;
+              END
+              $do$;
+
+  backoffLimit: 4
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-db-schedule
+spec:
+  template:
+    metadata:
+      name: init-db-schedule
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: check-db
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - until pg_isready -h {{.Values.postgresql.host}};
+              do echo waiting for database to start; sleep 3; done;
+      containers:
+        - name: init-schedule-schema
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - psql postgres://{{.Values.postgresql.user}}:{{.Values.postgresql.pass}}@{{.Values.postgresql.host}}/omul << 'EOF'
+
+              DO
+              $do$
+              BEGIN
+              IF EXISTS (
+              SELECT FROM pg_user WHERE usename = '{{.Values.scheduleService.db.user}}') THEN
+              RAISE NOTICE 'Role already exists. Skipping.';
+              ELSE
+              CREATE USER {{.Values.scheduleService.db.user}} WITH PASSWORD '{{.Values.scheduleService.db.pass | b64dec}}';
+              CREATE SCHEMA IF NOT EXISTS {{.Values.scheduleService.db.schema}};
+              GRANT CREATE ON SCHEMA {{.Values.scheduleService.db.schema}} to {{.Values.scheduleService.db.user}};
+              GRANT ALL ON ALL TABLES IN SCHEMA {{.Values.scheduleService.db.schema}} TO {{.Values.scheduleService.db.user}};
+              GRANT USAGE ON SCHEMA {{.Values.scheduleService.db.schema}} TO {{.Values.scheduleService.db.user}};
+              END IF;
+              END
+              $do$;
+
+  backoffLimit: 4
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-db-appointment
+spec:
+  template:
+    metadata:
+      name: init-db-appointment
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: check-db
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - until pg_isready -h {{.Values.postgresql.host}};
+              do echo waiting for database to start; sleep 3; done;
+      containers:
+        - name: init-appointment-schema
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - psql postgres://{{.Values.postgresql.user}}:{{.Values.postgresql.pass}}@{{.Values.postgresql.host}}/omul << 'EOF'
+
+              DO
+              $do$
+              BEGIN
+              IF EXISTS (
+              SELECT FROM pg_user WHERE usename = '{{.Values.appointmentService.db.user}}') THEN
+              RAISE NOTICE 'Role already exists. Skipping.';
+              ELSE
+              CREATE USER {{.Values.appointmentService.db.user}} WITH PASSWORD '{{.Values.appointmentService.db.pass | b64dec}}';
+              CREATE SCHEMA IF NOT EXISTS {{.Values.appointmentService.db.schema}};
+              GRANT CREATE ON SCHEMA {{.Values.appointmentService.db.schema}} to {{.Values.appointmentService.db.user}};
+              GRANT ALL ON ALL TABLES IN SCHEMA {{.Values.appointmentService.db.schema}} TO {{.Values.appointmentService.db.user}};
+              GRANT USAGE ON SCHEMA {{.Values.appointmentService.db.schema}} TO {{.Values.appointmentService.db.user}};
+              END IF;
+              END
+              $do$;
+
+  backoffLimit: 4
+{{- end }}

@@ -1,0 +1,106 @@
+version: "3.8"
+services:
+
+  customer:
+    build: ./customer
+    container_name: omul_customer
+    networks:
+      - omul
+    ports:
+      - "8100:8080"
+    environment:
+      - CUSTOMER_DB_TYPE=postgres
+      - CUSTOMER_PG_HOST=host.docker.internal
+      - CUSTOMER_PG_USER=customer
+      - CUSTOMER_PG_PASS=customer
+      - CUSTOMER_PG_SCHEMA=customer
+      - CUSTOMER_CACHE_ENABLED=false
+      - CUSTOMER_JWT_ENABLED=false
+      - CUSTOMER_TRANSPORT_TYPE=sync
+
+  schedule:
+    build: ./schedule
+    container_name: omul_schedule
+    networks:
+      - omul
+    ports:
+      - "8101:8080"
+    environment:
+      - SCHEDULE_DB_TYPE=postgres
+      - SCHEDULE_PG_HOST=host.docker.internal
+      - SCHEDULE_PG_USER=schedule
+      - SCHEDULE_PG_PASS=schedule
+      - SCHEDULE_PG_SCHEMA=schedule
+      - SCHEDULE_CACHE_ENABLED=false
+      - SCHEDULE_JWT_ENABLED=false
+      - SCHEDULE_TRANSPORT_PERSONNEL_TYPE=rest
+      - SCHEDULE_TRANSPORT_PERSONNEL_REST_URL=http://personnel:8080
+
+  personnel:
+    build: ./personnel
+    container_name: omul_personnel
+    networks:
+      - omul
+    ports:
+      - "8102:8080"
+    environment:
+      - PERSONNEL_DB_TYPE=postgres
+      - PERSONNEL_PG_HOST=host.docker.internal
+      - PERSONNEL_PG_USER=personnel
+      - PERSONNEL_PG_PASS=personnel
+      - PERSONNEL_PG_SCHEMA=personnel
+      - PERSONNEL_CACHE_ENABLED=false
+      - PERSONNEL_JWT_ENABLED=false
+
+  appointment:
+    build: ./appointment
+    container_name: omul_appointment
+    networks:
+      - omul
+    ports:
+      - "8103:8080"
+    environment:
+      - APPOINTMENT_DB_TYPE=postgres
+      - APPOINTMENT_PG_HOST=host.docker.internal
+      - APPOINTMENT_PG_USER=appointment
+      - APPOINTMENT_PG_PASS=appointment
+      - APPOINTMENT_PG_SCHEMA=appointment
+      - APPOINTMENT_CACHE_ENABLED=true
+      - APPOINTMENT_CACHE_PROVIDER=redis
+      - APPOINTMENT_CACHE_HOST=omul_redis
+      - APPOINTMENT_JWT_ENABLED=false
+      - APPOINTMENT_TRANSPORT_TYPE=sync
+      - APPOINTMENT_TRANSPORT_CUSTOMER_TYPE=rest
+      - APPOINTMENT_TRANSPORT_CUSTOMER_URL=http://customer:8080
+      - APPOINTMENT_TRANSPORT_SCHEDULE_TYPE=rest
+      - APPOINTMENT_TRANSPORT_SCHEDULE_URL=http://schedule:8080
+
+  auth:
+    build: ./auth
+    container_name: omul_auth
+    networks:
+      - omul
+    ports:
+      - "8105:8080"
+    depends_on:
+      - redis
+    environment:
+      - AUTH_DB_TYPE=postgres
+      - AUTH_PG_HOST=host.docker.internal
+      - AUTH_PG_USER=auth
+      - AUTH_PG_PASS=auth
+      - AUTH_PG_SCHEMA=auth
+      - AUTH_CACHE_ENABLED=true
+      - AUTH_CACHE_PROVIDER=redis
+      - AUTH_CACHE_HOST=omul_redis
+
+  redis:
+    image: redis
+    container_name: omul_redis
+    networks:
+      - omul
+    ports:
+      - "6379:6379"
+
+networks:
+  omul:

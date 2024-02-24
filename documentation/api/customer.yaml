@@ -1,0 +1,424 @@
+openapi: 3.0.1
+
+info:
+  title: Customer service
+  version: 0.0.1
+  description: Managing customer info (personal and medical)
+  contact:
+    name: Yury Melnikov
+    email: itavgur@gmail.com
+
+servers:
+  - url: 'http://localhost:8080'
+
+paths:
+  /v1/customer/newby:
+    post:
+      summary: Create new temporary customer
+      operationId: createCustomerTemporaryV1
+      tags:
+        - customerInfo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerTemporaryDataRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerTemporaryDataResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+  /v1/customer:
+    post:
+      summary: Create permanent customer
+      operationId: createCustomerV1
+      tags:
+        - customerInfo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerDataRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerDataResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+    get:
+      summary: Get customer info
+      operationId: getCustomerV1
+      tags:
+        - customerInfo
+      parameters:
+        - name: customerId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerDataResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+    put:
+      summary: Update existed user personal data
+      operationId: updateCustomerV1
+      tags:
+        - customerInfo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerDataRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerDataResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+    delete:
+      summary: Delete customer
+      description: Mark customer info as deleted
+      operationId: deleteCustomerV1
+      tags:
+        - customerInfo
+      parameters:
+        - name: customerId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        200:
+          description: OK
+        204:
+          description: Already deleted
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+  /v1/procedure:
+    post:
+      summary: Create new procedure for customer
+      operationId: createProcedureForCustomerV1
+      tags:
+        - procedureInfo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerProcedureRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerProcedureResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+    get:
+      summary: Get customer procedures
+      description: Get customer medical data, procedures
+      operationId: getCustomerProceduresV1
+      tags:
+        - procedureInfo
+      parameters:
+        - name: customerId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CustomerProcedureResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+  /v1/test:
+    post:
+      summary: Create new test for customer
+      operationId: createTestForCustomerV1
+      tags:
+        - testInfo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerTestRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerTestResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+    get:
+      summary: Get customer tests
+      operationId: getCustomerTestsV1
+      tags:
+        - testInfo
+      parameters:
+        - name: customerId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CustomerTestResponse"
+
+  /v1/test/result:
+    post:
+      summary: Add result to test
+      operationId: addResultToTestV1
+      tags:
+        - testInfo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerTestResultRequest"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerTestResultResponse"
+        400:
+          description: Invalid user request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardErrorMessage"
+
+components:
+  schemas:
+    CustomerTemporaryDataRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+        email:
+          type: string
+    CustomerTemporaryDataResponse:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          format: int32
+        phone:
+          type: string
+        email:
+          type: string
+    CustomerDataRequest:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          format: int32
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        gender:
+          type: string
+          enum:
+            - MALE
+            - FEMALE
+        documentId:
+          type: string
+        birthDay:
+          type: string
+          format: date
+        phone:
+          type: string
+    CustomerDataResponse:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          format: int32
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        gender:
+          type: string
+          enum:
+            - MALE
+            - FEMALE
+        documentId:
+          type: string
+        birthDay:
+          type: string
+          format: date
+        phone:
+          type: string
+    CustomerProcedureRequest:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          format: int32
+        summary:
+          type: string
+        description:
+          type: string
+        date:
+          type: string
+          format: date-time
+    CustomerProcedureResponse:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          format: int32
+        procedureId:
+          type: integer
+          format: int32
+        summary:
+          type: string
+        description:
+          type: string
+        date:
+          type: string
+          format: date-time
+    CustomerTestRequest:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          format: int32
+        summary:
+          type: string
+        description:
+          type: string
+        date:
+          type: string
+          format: date-time
+    CustomerTestResultRequest:
+      type: object
+      properties:
+        testId:
+          type: integer
+          format: int32
+        result:
+          type: string
+        date:
+          type: string
+          format: date-time
+    CustomerTestResultResponse:
+      type: object
+      properties:
+        result:
+          type: string
+        date:
+          type: string
+          format: date-time
+    CustomerTestResponse:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          format: int32
+        testId:
+          type: integer
+          format: int32
+        summary:
+          type: string
+        description:
+          type: string
+        result:
+          type: array
+          items:
+            $ref: "#/components/schemas/CustomerTestResultResponse"
+        date:
+          type: string
+          format: date-time
+    StandardErrorMessage:
+      type: object
+      properties:
+        source:
+          type: string
+        httpCode:
+          type: integer
+          format: int32
+        message:
+          type: string
+
+tags:
+  - name: customerInfo
+  - name: procedureInfo
+  - name: testInfo

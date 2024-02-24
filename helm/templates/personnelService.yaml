@@ -1,0 +1,188 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.personnelService.name }}
+data:
+  DB_TYPE: '{{.Values.personnelService.db.type}}'
+  PG_HOST: '{{.Values.personnelService.db.host}}'
+  PG_PORT: '{{.Values.personnelService.db.port}}'
+  PG_SCHEMA: '{{.Values.personnelService.db.schema}}'
+  PG_USER: '{{.Values.personnelService.db.user}}'
+  JWT_ENABLED: '{{.Values.personnelService.jwt.enabled}}'
+  CACHE_ENABLED: '{{.Values.personnelService.cache.enabled}}'
+  CACHE_PROVIDER: '{{.Values.personnelService.cache.provider}}'
+  CACHE_HOST: '{{.Values.personnelService.cache.host}}'
+  CACHE_PORT: '{{.Values.personnelService.cache.port}}'
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.personnelService.name }}
+type: Opaque
+data:
+  PG_PASS: {{.Values.personnelService.db.pass}}
+  JWT_SIGNING_KEY: {{.Values.personnelService.jwt.signingKey}}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.personnelService.name }}
+  labels:
+    {{- include "personnel.labels" . | nindent 4 }}
+spec:
+  type: LoadBalancer
+  ports:
+    - port: {{ .Values.personnelService.port }}
+      targetPort: {{ .Values.personnelService.appPort }}
+      protocol: TCP
+      name: personnel-svc-port
+  selector:
+    {{- include "personnel.selectorLabels" . | nindent 4 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.personnelService.name }}
+  labels:
+    {{- include "personnel.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.personnelService.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "personnel.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "personnel.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.postgresql.enabled }}
+      initContainers:
+        - name: check-postgres-ready
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - until pg_isready -h {{.Values.postgresql.host}};
+              do echo waiting for database to start; sleep 3; done;
+      {{- end}}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "omul.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.personnelService.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.personnelService.image }}:{{ .Values.personnelService.imageTag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.personnelService.imagePullPolicy }}
+          ports:
+            - name: personnel-port
+              containerPort: {{ .Values.personnelService.appPort }}
+              protocol: TCP
+          env:
+            - name: PERSONNEL_SERVICE_PORT
+              value: "{{ .Values.personnelService.appPort }}"
+            - name: PERSONNEL_DB_TYPE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.personnelService.name }}
+                  key: DB_TYPE
+            - name: PERSONNEL_PG_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.personnelService.name }}
+                  key: PG_HOST
+            - name: PERSONNEL_PG_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.personnelService.name }}
+                  key: PG_PORT
+            - name: PERSONNEL_PG_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.personnelService.name }}
+                  key: PG_SCHEMA
+            - name: PERSONNEL_PG_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.personnelService.name }}
+                  key: PG_USER
+            - name: PERSONNEL_PG_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.personnelService.name }}
+                  key: PG_PASS
+            - name: PERSONNEL_CACHE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.personnelService.name }}
+                  key: CACHE_ENABLED
+            - name: PERSONNEL_CACHE_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.personnelService.name }}
+                  key: CACHE_PROVIDER
+            - name: PERSONNEL_CACHE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.personnelService.name }}
+                  key: CACHE_HOST
+            - name: PERSONNEL_CACHE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.personnelService.name }}
+                  key: CACHE_PORT
+            - name: PERSONNEL_JWT_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.personnelService.name }}
+                  key: JWT_ENABLED
+            - name: PERSONNEL_JWT_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.personnelService.name }}
+                  key: JWT_SIGNING_KEY
+          livenessProbe:
+            initialDelaySeconds: {{ .Values.personnelService.probe.livenessInitDelayTime}}
+            httpGet:
+              port: {{ .Values.personnelService.appPort }}
+              path: /actuator/health
+          readinessProbe:
+            initialDelaySeconds: {{ .Values.personnelService.probe.readinessInitDelayTime}}
+            httpGet:
+              port: {{ .Values.personnelService.appPort }}
+              path: /actuator/health
+          resources:
+            {{- toYaml .Values.personnelService.resources | nindent 12 }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,32 @@
+{{- $ingressName := .Values.ingress.name -}}
+{{- $ingressHost := .Values.ingress.host -}}
+{{- $authUrl := .Values.ingress.authValidationUrl -}}
+
+{{- range .Values.ingress.paths }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ printf "%s-%s-%s" $ingressName .service .ruleName }}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: {{ .dest }}
+    {{- if .secured | default false}}
+    nginx.ingress.kubernetes.io/auth-url: {{ $authUrl }}
+    nginx.ingress.kubernetes.io/auth-response-headers: "Authorization"
+    {{- end }}
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: {{ $ingressHost }}
+      http:
+        paths:
+          - path: {{ .path }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ .service }}
+                port:
+                  number: {{ .port }}
+---
+
+{{- end }}
