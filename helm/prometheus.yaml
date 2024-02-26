@@ -1,0 +1,25 @@
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
+
+grafana:
+  enabled: true
+  adminPassword: admin
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+    hosts:
+      - arch.homework
+    path: /grafana
+
+  grafana.ini:
+    server:
+      root_url: http://arch.homework/grafana
+      serve_from_sub_path: true
+
+  persistence:
+    enabled: true
+    type: pvc
+    existingClaim: grafana-pvc

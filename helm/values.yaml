@@ -4,7 +4,7 @@ customerService:
   appPort: 8080
   replicaCount: 1
   image: ygmelnikov/omul_customer
-  imageTag: 0.0.1
+  imageTag: 0.0.2
   imagePullPolicy: IfNotPresent
   db:
     type: postgres
@@ -31,7 +31,7 @@ scheduleService:
   appPort: 8080
   replicaCount: 1
   image: ygmelnikov/omul_schedule
-  imageTag: 0.0.1
+  imageTag: 0.0.2
   imagePullPolicy: IfNotPresent
   db:
     type: postgres
@@ -63,7 +63,7 @@ personnelService:
   appPort: 8080
   replicaCount: 1
   image: ygmelnikov/omul_personnel
-  imageTag: 0.0.1
+  imageTag: 0.0.2
   imagePullPolicy: IfNotPresent
   db:
     type: postgres
@@ -90,7 +90,7 @@ appointmentService:
   appPort: 8080
   replicaCount: 1
   image: ygmelnikov/omul_appointment
-  imageTag: 0.0.1
+  imageTag: 0.0.2
   imagePullPolicy: IfNotPresent
   db:
     type: postgres
@@ -125,7 +125,7 @@ authService:
   appPort: 8080
   replicaCount: 1
   image: ygmelnikov/omul_auth
-  imageTag: 0.0.1
+  imageTag: 0.0.2
   imagePullPolicy: IfNotPresent
   db:
     type: postgres
@@ -153,6 +153,9 @@ redis:
   replica:
     replicaCount: 1
 
+filebeat:
+  enabled: true
+
 postgresql:
   enabled: true
   host: host.docker.internal
@@ -179,10 +182,13 @@ ingress:
       service: appointment-service, port: 8103, secured: true },
     { ruleName: "auth1",path: "/auth(.*)", dest: "/v1/auth$1",
       service: auth-service, port: 8105 }
-
   ]
 
   authValidationUrl: "http://arch.homework/auth/validate"
+
+monitoring:
+  prometheus:
+    enabled: true
 
 serviceAccount:
   create: false

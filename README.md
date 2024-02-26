@@ -7,9 +7,7 @@ POSTGRES_USER=root -e POSTGRES_PASSWORD=root -e POSTGRES_DB=omul -d postgres:15.
 
 ## ingress
 
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx/
-
-helm repo update
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx/ && helm repo update
 
 helm install nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace -f helm/nginx-ingress.yaml
 
@@ -17,19 +15,19 @@ kubectl create namespace omul
 
 ## omul - mock, test only local services
 
-helm install omul-mock helm/ -f helm/values-mock.yaml
+helm install omul-mock helm/ -f helm/values-mock.yaml -n omul --create-namespace
 
 newman run ./postman/mock_no_jwt.collection.json -e ./postman/localhost.env.json
 
 ## omul, no auth, direct access to rest api
 
-helm install omul helm/ -f helm/values.yaml
+helm install omul helm/ -f helm/values.yaml -n omul --create-namespace
 
 newman run postman/e2e_no_jwt.collection.json -e postman/localhost.env.json
 
 ## omul, with auth, access via nginx api-gateway
 
-helm install omul helm/ -f helm/values.yaml
+helm install omul helm/ -f helm/values.yaml -n omul --create-namespace
 
 newman run postman/e2e_jwt.collection.json -e postman/k8s.env.json --env-var jwt={token}
 
@@ -72,3 +70,17 @@ curl --location 'http://host1869082-1.hostland.pro/auth/login/pass' \
 "login": "it.avgur@test.com",
 "password": "pass"
 }'
+
+## Monitoring
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts && helm repo update
+
+kubectl apply -f helm/grafana_storage.yaml
+
+helm install prometheus-stack prometheus-community/kube-prometheus-stack -f helm/prometheus.yaml -n monitoring --create-namespace
+
+## ELK
+helm repo add elastic https://helm.elastic.co && helm repo update
+
+helm install elastic-operator elastic/eck-operator -n elastic-system --create-namespace
+
+kubectl apply -f helm/elk.yaml -n elastic-system

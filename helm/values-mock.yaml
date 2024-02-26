@@ -4,7 +4,7 @@ customerService:
   appPort: 8080
   replicaCount: 1
   image: ygmelnikov/omul_customer
-  imageTag: 0.0.1
+  imageTag: 0.0.2
   imagePullPolicy: IfNotPresent
   db:
     type: mock
@@ -23,7 +23,7 @@ scheduleService:
   appPort: 8080
   replicaCount: 1
   image: ygmelnikov/omul_schedule
-  imageTag: 0.0.1
+  imageTag: 0.0.2
   imagePullPolicy: IfNotPresent
   db:
     type: mock
@@ -45,7 +45,7 @@ personnelService:
   appPort: 8080
   replicaCount: 1
   image: ygmelnikov/omul_personnel
-  imageTag: 0.0.1
+  imageTag: 0.0.2
   imagePullPolicy: IfNotPresent
   db:
     type: mock
@@ -64,7 +64,7 @@ appointmentService:
   appPort: 8080
   replicaCount: 1
   image: ygmelnikov/omul_appointment
-  imageTag: 0.0.1
+  imageTag: 0.0.2
   imagePullPolicy: IfNotPresent
   db:
     type: mock
@@ -89,7 +89,7 @@ authService:
   appPort: 8080
   replicaCount: 1
   image: ygmelnikov/omul_auth
-  imageTag: 0.0.1
+  imageTag: 0.0.2
   imagePullPolicy: IfNotPresent
   db:
     type: mock

@@ -29,7 +29,9 @@ kind: Service
 metadata:
   name: {{ .Values.authService.name }}
   labels:
+    {{- include "omul.labels" . | nindent 4 }}
     {{- include "auth.labels" . | nindent 4 }}
+    {{- include "omul.monitorable" . | nindent 4 }}
 spec:
   type: LoadBalancer
   ports:
@@ -62,6 +64,7 @@ spec:
       {{- end }}
       labels:
         {{- include "auth.selectorLabels" . | nindent 8 }}
+        {{- include "omul.monitorable" . | nindent 8 }}
     spec:
       {{- if .Values.postgresql.enabled }}
       initContainers:

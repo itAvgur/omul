@@ -1,0 +1,55 @@
+{{- if .Values.monitoring.prometheus.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "omul.fullname" . }}
+  labels:
+  {{- include "omul.labels" . | nindent 4 }}
+spec:
+  jobLabel: {{ include "omul.fullname" . }}
+  namespaceSelector:
+    matchNames:
+      - "{{ $.Release.Namespace }}"
+  selector:
+    matchLabels:
+{{/*      {{ include "omul.labels" . | nindent 6 }}*/}}
+      {{- include "omul.monitorable" . | nindent 6 }}
+  endpoints:
+    - interval: 15s
+      port: customer-svc-port
+      path: /actuator/prometheus
+    - interval: 15s
+      port: schedule-svc-port
+      path: /actuator/prometheus
+    - interval: 15s
+      port: personnel-svc-port
+      path: /actuator/prometheus
+    - interval: 15s
+      port: appointment-svc-port
+      path: /actuator/prometheus
+    - interval: 15s
+      port: auth-svc-port
+      path: /actuator/prometheus
+
+---
+  {{if .Values.postgresql.enabled}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: prometheus-postgres-exporter
+spec:
+  jobLabel: prometheus-postgres-exporter
+  namespaceSelector:
+    matchNames:
+      - "{{ $.Release.Namespace }}"
+  selector:
+    matchLabels:
+      app: prometheus-postgres-exporter
+      release: postgres-exporter
+  endpoints:
+    - interval: 15m
+      port: http
+      path: /metrics
+
+  {{- end}}
+  {{- end }}

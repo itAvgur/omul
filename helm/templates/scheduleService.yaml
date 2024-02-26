@@ -32,7 +32,9 @@ kind: Service
 metadata:
   name: {{ .Values.scheduleService.name }}
   labels:
+    {{- include "omul.labels" . | nindent 4 }}
     {{- include "schedule.labels" . | nindent 4 }}
+    {{- include "omul.monitorable" . | nindent 4 }}
 spec:
   type: LoadBalancer
   ports:
@@ -65,6 +67,7 @@ spec:
       {{- end }}
       labels:
         {{- include "schedule.selectorLabels" . | nindent 8 }}
+        {{- include "omul.monitorable" . | nindent 8 }}
     spec:
       {{- if .Values.postgresql.enabled }}
       initContainers:
