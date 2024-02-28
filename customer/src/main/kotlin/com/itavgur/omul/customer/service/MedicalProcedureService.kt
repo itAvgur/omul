@@ -26,7 +26,7 @@ class MedicalProcedureService(
             return CustomerProcedureResponse.from(newProcedure)
         }
 
-        throw CustomerNotFoundException("customer with id ${request.customerId} is absent")
+        throw CustomerNotFoundException("customer with id ${request.customerId} is absent",)
     }
 
     fun getProcedures(customerId: Int): List<CustomerProcedureResponse> {
@@ -38,7 +38,7 @@ class MedicalProcedureService(
                 .map { CustomerProcedureResponse.from(it) }
                 .toList()
         }
-        throw CustomerNotFoundException("customer with id $customerId is absent")
+        throw CustomerNotFoundException("customer with id $customerId is absent",)
     }
 
 }

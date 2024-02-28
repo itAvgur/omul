@@ -39,7 +39,7 @@ metadata:
     {{- include "appointment.labels" . | nindent 4 }}
     {{- include "omul.monitorable" . | nindent 4 }}
 spec:
-  type: LoadBalancer
+  type: {{ .Values.appointmentService.portType }}
   ports:
     - port: {{ .Values.appointmentService.port }}
       targetPort: {{ .Values.appointmentService.appPort }}

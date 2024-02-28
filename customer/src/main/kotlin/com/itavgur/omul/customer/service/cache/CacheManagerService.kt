@@ -3,7 +3,7 @@ package com.itavgur.omul.customer.service.cache
 import com.itavgur.omul.customer.config.CacheConfig
 import com.itavgur.omul.customer.exception.InvalidRequestException
 import com.itavgur.omul.customer.web.dto.CacheManagerRequest
-import com.itavgur.otus.highload.app.util.logger
+import com.itavgur.omul.customer.util.logger
 import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean

@@ -34,7 +34,7 @@ metadata:
     {{- include "personnel.labels" . | nindent 4 }}
     {{- include "omul.monitorable" . | nindent 4 }}
 spec:
-  type: LoadBalancer
+  type: {{ .Values.personnelService.portType }}
   ports:
     - port: {{ .Values.personnelService.port }}
       targetPort: {{ .Values.personnelService.appPort }}

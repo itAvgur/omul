@@ -51,26 +51,6 @@ curl --location 'http://localhost:8105/v1/auth/login/pass' \
 "password": "pass"
 }'
 
-### sign user (get jwt)
-
-curl --location 'http://host1869082-1.hostland.pro/auth/register' \
---header 'Content-Type: application/json' \
---data-raw '{
-"login": "it.avgur@test.com",
-"userId": "0",
-"role": "CUSTOMER",
-"password": "pass"
-}'
-
-### auth user (get jwt)
-
-curl --location 'http://host1869082-1.hostland.pro/auth/login/pass' \
---header 'Content-Type: application/json' \
---data-raw '{
-"login": "it.avgur@test.com",
-"password": "pass"
-}'
-
 ## Monitoring
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts && helm repo update
 
@@ -78,9 +58,4 @@ kubectl apply -f helm/grafana_storage.yaml
 
 helm install prometheus-stack prometheus-community/kube-prometheus-stack -f helm/prometheus.yaml -n monitoring --create-namespace
 
-## ELK
-helm repo add elastic https://helm.elastic.co && helm repo update
-
-helm install elastic-operator elastic/eck-operator -n elastic-system --create-namespace
-
-kubectl apply -f helm/elk.yaml -n elastic-system
+helm install loki grafana/loki-stack -n monitoring --create-namespace -f helm/loki-values.yaml

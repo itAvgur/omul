@@ -13,6 +13,8 @@ data:
   CACHE_PROVIDER: '{{.Values.customerService.cache.provider}}'
   CACHE_HOST: '{{.Values.customerService.cache.host}}'
   CACHE_PORT: '{{.Values.customerService.cache.port}}'
+  LOG_LEVEL_CONSOLE: '{{.Values.customerService.log.consoleLevel}}'
+  LOG_CAUSE_ENABLED: '{{.Values.customerService.log.causeEnabled}}'
 
 ---
 apiVersion: v1
@@ -34,7 +36,7 @@ metadata:
     {{- include "customer.labels" . | nindent 4 }}
     {{- include "omul.monitorable" . | nindent 4 }}
 spec:
-  type: LoadBalancer
+  type: {{ .Values.customerService.portType }}
   ports:
     - port: {{ .Values.customerService.port }}
       targetPort: {{ .Values.customerService.appPort }}
@@ -157,6 +159,16 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.customerService.name }}
                   key: JWT_SIGNING_KEY
+            - name: CUSTOMER_LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.customerService.name }}
+                  key: LOG_LEVEL_CONSOLE
+            - name: CUSTOMER_LOG_CAUSE_ENABLE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.customerService.name }}
+                  key: LOG_CAUSE_ENABLED
           livenessProbe:
             initialDelaySeconds: {{ .Values.customerService.probe.livenessInitDelayTime}}
             httpGet:

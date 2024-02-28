@@ -63,5 +63,7 @@ out/
 #bruno
 !bruno/omul/node_modules/**
 !bruno/omul/package-lock.json!/helm/charts/
+
+#helm
 !/helm/Chart.lock
 !/helm/charts/

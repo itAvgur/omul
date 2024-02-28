@@ -8,6 +8,7 @@ import com.itavgur.omul.customer.web.dto.CustomerTemporaryDataRequest
 import com.itavgur.omul.customer.web.dto.CustomerTemporaryDataResponse
 import io.swagger.v3.oas.annotations.Operation
 import jakarta.validation.Valid
+import org.slf4j.event.Level
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
@@ -33,7 +34,7 @@ class CustomerControllerV1(
         @Valid @RequestBody request: CustomerDataRequest,
     ): CustomerDataResponse {
         request.customerId?.let {
-            throw InvalidRequestException("customerId must be empty")
+            throw InvalidRequestException("customerId must be empty", Level.WARN)
         }
         return customerService.createCustomer(request)
     }

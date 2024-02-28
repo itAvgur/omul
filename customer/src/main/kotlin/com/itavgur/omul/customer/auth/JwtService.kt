@@ -1,6 +1,7 @@
 package com.itavgur.omul.customer.auth
 
 import com.itavgur.omul.customer.exception.InvalidRequestException
+import com.itavgur.omul.customer.util.logger
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
@@ -18,6 +19,7 @@ import javax.crypto.SecretKey
 class JwtService {
 
     companion object {
+        val LOG by logger()
         val SECURITY_SUBSYSTEM = Subsystem.CUSTOMER
     }
 
@@ -30,11 +32,15 @@ class JwtService {
     fun validateIdWithJwt(id: Int) {
 
         if (securityEnabled) {
+            LOG.debug("JWT checking is enabled, try to check")
 
             val user = SecurityContextHolder.getContext().authentication.principal as User
             if (id != user.linkedId) {
+                LOG.error("access to target data is forbidden: request user id: ${id}, token: ${user.linkedId}")
                 throw ForbiddenException("access to target data is forbidden", httpCode = HttpStatus.FORBIDDEN)
             }
+        } else {
+            LOG.debug("JWT checking is disabled, skipping")
         }
 
     }
@@ -60,6 +66,7 @@ class JwtService {
         try {
             return Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token).payload
         } catch (ex: JwtException) {
+            LOG.warn("jwt invalid")
             throw InvalidRequestException("jwt invalid")
         }
     }

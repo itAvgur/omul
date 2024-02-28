@@ -36,7 +36,7 @@ metadata:
     {{- include "schedule.labels" . | nindent 4 }}
     {{- include "omul.monitorable" . | nindent 4 }}
 spec:
-  type: LoadBalancer
+  type: {{ .Values.scheduleService.portType }}
   ports:
     - port: {{ .Values.scheduleService.port }}
       targetPort: {{ .Values.scheduleService.appPort }}
