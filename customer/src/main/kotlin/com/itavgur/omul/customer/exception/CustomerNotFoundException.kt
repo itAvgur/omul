@@ -1,3 +1,5 @@
 package com.itavgur.omul.customer.exception
 
-class CustomerNotFoundException(message: String) : RuntimeException(message)
+import org.slf4j.event.Level
+
+class CustomerNotFoundException(message: String, val logLevel: Level = Level.ERROR) : RuntimeException(message)

@@ -3,9 +3,10 @@ package com.itavgur.omul.customer.web.hander
 import com.itavgur.omul.customer.auth.ForbiddenException
 import com.itavgur.omul.customer.exception.CustomerNotFoundException
 import com.itavgur.omul.customer.exception.InvalidRequestException
+import com.itavgur.omul.customer.util.logger
 import com.itavgur.omul.customer.web.dto.GeneralErrorResponse
-import com.itavgur.otus.highload.app.util.logger
 import jakarta.servlet.http.HttpServletRequest
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatusCode
 import org.springframework.http.ResponseEntity
@@ -17,6 +18,10 @@ import org.springframework.web.bind.annotation.ResponseStatus
 
 @ControllerAdvice
 class ApplicationExceptionHandler {
+
+
+    @Value("\${log.cause.enabled}")
+    private val loggingCause: Boolean = false
 
     companion object {
         val LOG by logger()
@@ -39,8 +44,12 @@ class ApplicationExceptionHandler {
         req: HttpServletRequest,
         exception: InvalidRequestException
     ): ResponseEntity<Any> {
+
+        LOG.atLevel(exception.logLevel).log("Bad API: ${exception.message}")
+        printStackTrace(exception)
+
         LOG.error("Bad API - InvalidRequestException : ${exception.message}")
-        val response = GeneralErrorResponse(HttpStatus.BAD_REQUEST.value(), exception.message, null)
+        val response = GeneralErrorResponse<Unit>(HttpStatus.BAD_REQUEST.value(), exception.message)
         return ResponseEntity(response, HttpStatus.BAD_REQUEST)
     }
 
@@ -51,7 +60,7 @@ class ApplicationExceptionHandler {
         exception: MethodArgumentNotValidException
     ): ResponseEntity<Any> {
         LOG.error("Bad API - MethodArgumentNotValidException : ${exception.message}")
-        val response = GeneralErrorResponse(HttpStatus.BAD_REQUEST.value(), exception.message, null)
+        val response = GeneralErrorResponse<Unit>(HttpStatus.BAD_REQUEST.value(), exception.message)
         return ResponseEntity(response, HttpStatus.BAD_REQUEST)
     }
 
@@ -61,8 +70,11 @@ class ApplicationExceptionHandler {
         req: HttpServletRequest,
         exception: CustomerNotFoundException
     ): ResponseEntity<Any> {
-        LOG.error("Bad API - CustomerNotFoundException : ${exception.message}")
-        val response = GeneralErrorResponse(HttpStatus.BAD_REQUEST.value(), exception.message, null)
+
+        LOG.atLevel(exception.logLevel).log("Bad API: ${exception.message}")
+        printStackTrace(exception)
+
+        val response = GeneralErrorResponse<Unit>(HttpStatus.BAD_REQUEST.value(), exception.message)
         return ResponseEntity(response, HttpStatus.BAD_REQUEST)
     }
 
@@ -83,7 +95,10 @@ class ApplicationExceptionHandler {
         req: HttpServletRequest,
         exception: ForbiddenException
     ): ResponseEntity<Any> {
-        LOG.error("Bad API - ForbiddenException : ${exception.message}")
+
+        LOG.atLevel(exception.logLevel).log("Bad API: ${exception.message}")
+        printStackTrace(exception)
+
         val response = GeneralErrorResponse(
             exception.httpCode?.value() ?: HttpStatus.INTERNAL_SERVER_ERROR.value(),
             exception.message, null
@@ -92,6 +107,12 @@ class ApplicationExceptionHandler {
             response,
             HttpStatusCode.valueOf(exception.httpCode?.value() ?: HttpStatus.INTERNAL_SERVER_ERROR.value())
         )
+    }
+
+    private fun printStackTrace(ex: Throwable) {
+        if (loggingCause) {
+            ex.printStackTrace()
+        }
     }
 
 }

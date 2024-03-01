@@ -14,5 +14,7 @@ data class GeneralErrorResponse<T>(
     val message: String? = null,
     @Schema(name = "response", required = true)
     @JsonInclude(NON_NULL)
-    val response: T? = null
+    val response: T? = null,
+    @JsonInclude(NON_NULL)
+    var stackTrace: Array<out StackTraceElement>? = null
 )

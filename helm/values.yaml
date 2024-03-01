@@ -1,11 +1,12 @@
 customerService:
   name: customer-service
   port: 8100
+  portType: LoadBalancer
   appPort: 8080
   replicaCount: 1
   image: ygmelnikov/omul_customer
-  imageTag: 0.0.1
-  imagePullPolicy: IfNotPresent
+  imageTag: 0.0.2
+  imagePullPolicy: Always
   db:
     type: postgres
     host: host.docker.internal
@@ -24,15 +25,19 @@ customerService:
   probe:
     livenessInitDelayTime: 60
     readinessInitDelayTime: 60
+  log:
+    consoleLevel: INFO
+    causeEnabled: false
 
 scheduleService:
   name: schedule-service
   port: 8101
+  portType: LoadBalancer
   appPort: 8080
   replicaCount: 1
   image: ygmelnikov/omul_schedule
-  imageTag: 0.0.1
-  imagePullPolicy: IfNotPresent
+  imageTag: 0.0.2
+  imagePullPolicy: Always
   db:
     type: postgres
     host: host.docker.internal
@@ -60,11 +65,12 @@ scheduleService:
 personnelService:
   name: personnel-service
   port: 8102
+  portType: LoadBalancer
   appPort: 8080
   replicaCount: 1
   image: ygmelnikov/omul_personnel
-  imageTag: 0.0.1
-  imagePullPolicy: IfNotPresent
+  imageTag: 0.0.2
+  imagePullPolicy: Always
   db:
     type: postgres
     host: host.docker.internal
@@ -87,11 +93,12 @@ personnelService:
 appointmentService:
   name: appointment-service
   port: 8103
+  portType: LoadBalancer
   appPort: 8080
   replicaCount: 1
   image: ygmelnikov/omul_appointment
-  imageTag: 0.0.1
-  imagePullPolicy: IfNotPresent
+  imageTag: 0.0.2
+  imagePullPolicy: Always
   db:
     type: postgres
     host: host.docker.internal
@@ -122,11 +129,12 @@ appointmentService:
 authService:
   name: auth-service
   port: 8105
+  portType: LoadBalancer
   appPort: 8080
   replicaCount: 1
   image: ygmelnikov/omul_auth
-  imageTag: 0.0.1
-  imagePullPolicy: IfNotPresent
+  imageTag: 0.0.2
+  imagePullPolicy: Always
   db:
     type: postgres
     host: host.docker.internal
@@ -151,7 +159,10 @@ redis:
   auth:
     enabled: false
   replica:
-    replicaCount: 1
+    replicaCount: 0
+
+filebeat:
+  enabled: true
 
 postgresql:
   enabled: true
@@ -179,10 +190,13 @@ ingress:
       service: appointment-service, port: 8103, secured: true },
     { ruleName: "auth1",path: "/auth(.*)", dest: "/v1/auth$1",
       service: auth-service, port: 8105 }
-
   ]
 
   authValidationUrl: "http://arch.homework/auth/validate"
+
+monitoring:
+  prometheus:
+    enabled: true
 
 serviceAccount:
   create: false

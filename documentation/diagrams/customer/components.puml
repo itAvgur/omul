@@ -1,0 +1,56 @@
+@startuml
+Title Core components
+caption Omul project
+left to right direction
+scale 1.1
+
+skinparam {
+    BackgroundColor lightGray
+    DefaultTextAlignment up
+    ArrowColor darkblue
+    ArrowThickness 2
+    DefaultTextAlignment center
+    Linetype ortho
+    RoundCorner 20
+    ComponentStyle uml2
+}
+
+skinparam database {
+    borderColor red
+    backgroundColor Yellow
+}
+
+[nginx]
+
+component "Core services" as core #lightGreen {
+    [Customer]
+    [Schedule]
+    [Personnel]
+    [Appointment]
+    hide [Notification]
+    [Authentication]
+    hide [Feedback]
+}
+nginx -d- core
+
+Schedule <-l-> Personnel : rest-http
+Appointment <-l-> Schedule : rest-http
+Appointment <-l-> Customer : rest-http
+
+component DB #lightYellow {
+    database "Postgresql" as postgres #lightblue
+'    core -r- postgres
+    Authentication --- postgres #blue
+    Customer --- postgres #blue
+    Customer --- postgres #blue
+    Schedule --- postgres #blue
+    Personnel --- postgres #blue
+    database "Redis" as redis
+    Authentication -r- redis #red
+    Customer .. redis #red
+    Schedule .. redis #red
+    Appointment .. redis #red
+    Personnel .. redis #red
+}
+
+@enduml

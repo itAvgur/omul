@@ -74,6 +74,7 @@ Create the name of the service account to use
 
 {{- define "auth.labels" -}}
 helm.sh/chart: {{ include "omul.chart" . }}
+{{ include "omul.labels" . }}
 {{ include "auth.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
@@ -87,6 +88,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{- define "customer.labels" -}}
 helm.sh/chart: {{ include "omul.chart" . }}
+{{ include "omul.labels" . }}
 {{ include "customer.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
@@ -100,6 +102,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{- define "schedule.labels" -}}
 helm.sh/chart: {{ include "omul.chart" . }}
+{{ include "omul.labels" . }}
 {{ include "schedule.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
@@ -113,6 +116,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{- define "personnel.labels" -}}
 helm.sh/chart: {{ include "omul.chart" . }}
+{{ include "omul.labels" . }}
 {{ include "personnel.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
@@ -126,6 +130,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{- define "appointment.labels" -}}
 helm.sh/chart: {{ include "omul.chart" . }}
+{{ include "omul.labels" . }}
 {{ include "appointment.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
@@ -139,4 +144,8 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{- define "postgres.fullTag" -}}
 {{- printf "%s:%s" "postgresql" .Values.postgresql.image.tag  | trimSuffix "-" }}
+{{- end }}
+
+{{- define "omul.monitorable" -}}
+kubernetes/monitor-able: "true"
 {{- end }}

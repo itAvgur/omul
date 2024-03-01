@@ -2,7 +2,7 @@ openapi: 3.0.1
 
 info:
   title: Customer service
-  version: 0.0.1
+  version: 0.0.2
   description: Managing customer info (personal and medical)
   contact:
     name: Yury Melnikov

@@ -27,7 +27,7 @@ class MedicalTestService(
             return MedicalTestResponse.from(newTest)
         }
 
-        throw CustomerNotFoundException("customer with id ${request.customerId} is absent")
+        throw CustomerNotFoundException("customer with id ${request.customerId} is absent",)
     }
 
     fun checkMedicalTest(testId: Int): Boolean {
@@ -46,7 +46,7 @@ class MedicalTestService(
                 .map { MedicalTestResponse.from(it) }
                 .toList()
         }
-        throw CustomerNotFoundException("customer with id $customerId is absent")
+        throw CustomerNotFoundException("customer with id $customerId is absent",)
     }
 
     fun getMedicalTest(testId: Int): MedicalTest {
@@ -56,7 +56,7 @@ class MedicalTestService(
 
             return it
         }
-        throw CustomerNotFoundException("medical test with id $testId is absent")
+        throw CustomerNotFoundException("medical test with id $testId is absent",)
     }
 
     fun addResultToMedicalTest(request: MedicalTestResultRequest): MedicalTestResultResponse {
@@ -73,7 +73,7 @@ class MedicalTestService(
             return MedicalTestResultResponse.from(newProcedure)
         }
 
-        throw CustomerNotFoundException("customer with id $customerId is absent")
+        throw CustomerNotFoundException("customer with id $customerId is absent",)
     }
 
 }

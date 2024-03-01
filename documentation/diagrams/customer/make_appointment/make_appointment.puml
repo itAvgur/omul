@@ -1,0 +1,55 @@
+@startuml
+skinparam {
+    BackgroundColor lightGray
+    defaultTextAlignment center
+}
+
+<style>
+ .onlineStyle * {
+     BackgroundColor lightGreen
+     FontColor black
+     RoundCorner 10
+ }
+.callStyle * {
+  BackgroundColor lightYellow
+  FontColor black
+  RoundCorner 10
+}
+</style>
+
+
+|Customer|
+start
+split
+    -> Телефонный звонок;
+    :Сделать звонок; <<callStyle>>
+    |Operator|
+    :Просмотреть свободные слоты \n в расписании; <<callStyle>>
+    :Подобрать данные заявки клиенту; <<callStyle>>
+
+split again
+    -[dotted]-> on-line;
+    |Customer|
+    :Просмотреть свободные слоты \n в расписании; <<onlineStyle>>
+    -[dotted]-> on-line;
+    :Сделать заявку; <<onlineStyle>>
+    |Operator|
+    -[dotted]-> on-line;
+    :Подтвердить заявку звонком клиенту;
+    -[dotted]-> on-line;
+    while (Удалось дозвониться?) is (Нет)
+            -[dotted]-> on-line;
+            :Попытка каждые 4 часа;
+    endwhile
+    -[dotted]-> on-line;
+end split
+
+    if (Клиент подтвердил заявку?) is (Да) then
+        :Принять заявку в работу;
+    else (Нет)
+        end
+    endif
+    |Customer|
+stop
+
+@enduml

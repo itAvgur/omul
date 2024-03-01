@@ -8,6 +8,7 @@ import com.itavgur.omul.customer.web.dto.CustomerDataRequest
 import com.itavgur.omul.customer.web.dto.CustomerDataResponse
 import com.itavgur.omul.customer.web.dto.CustomerTemporaryDataRequest
 import com.itavgur.omul.customer.web.dto.CustomerTemporaryDataResponse
+import org.slf4j.event.Level
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
@@ -28,7 +29,7 @@ class CustomerService(
 
         customerDao.getCustomerById(id)
             ?.let { return CustomerDataResponse.from(it) }
-        throw CustomerNotFoundException("customer with id $id is absent")
+        throw CustomerNotFoundException("try to find customer with id $id, customer is absent", Level.WARN)
     }
 
     fun createTemporaryCustomer(request: CustomerTemporaryDataRequest): CustomerTemporaryDataResponse {
@@ -59,7 +60,7 @@ class CustomerService(
                         customerDao.updateCustomer(customer = request.toCustomer())
                     )
                 }
-            throw CustomerNotFoundException("customer with id ${request.customerId} is absent")
+            throw CustomerNotFoundException("customer with id ${request.customerId} is absent", Level.WARN)
         }
 
         val newCustomer = customerDao.createCustomer(customer = request.toCustomer())
@@ -73,7 +74,7 @@ class CustomerService(
             ?.let {
                 return customerDao.deleteCustomer(id)
             }
-        throw CustomerNotFoundException("customer with id $id missed")
+        throw CustomerNotFoundException("try to delete customer with id $id, customer is absent", Level.WARN)
     }
 
 }

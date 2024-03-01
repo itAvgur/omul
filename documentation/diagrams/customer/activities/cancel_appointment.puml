@@ -1,0 +1,45 @@
+@startuml
+skinparam {
+    BackgroundColor lightGray
+    defaultTextAlignment center
+}
+
+<style>
+ .onlineStyle * {
+     BackgroundColor lightGreen
+     FontColor black
+     RoundCorner 10
+ }
+.callStyle * {
+  BackgroundColor lightYellow
+  FontColor black
+  RoundCorner 10
+}
+</style>
+
+|Customer|
+start
+    -> Телефонный звонок;
+    :Сделать звонок;
+    |Operator|
+    :Найти данные заказа;
+    if (Заявка найдена?) is (Да) then
+        :Отменить заявку;
+    else (Нет)
+        end
+    endif
+    if (Создать новую заявку?) is (Нет) then
+        |Operator|
+    else (Да)
+        :Просмотреть свободные слоты \n в расписании;
+        :Подобрать данные заявки клиенту;
+        if (Клиент подтвердил заявку?) is (Да) then
+            :Принять заявку в работу;
+        else (Нет)
+            end
+        endif
+    endif
+    |Customer|
+stop
+
+@enduml

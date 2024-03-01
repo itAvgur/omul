@@ -1,4 +1,4 @@
-package com.itavgur.otus.highload.app.util
+package com.itavgur.omul.customer.util
 
 import org.slf4j.LoggerFactory
 import kotlin.reflect.full.companionObject
