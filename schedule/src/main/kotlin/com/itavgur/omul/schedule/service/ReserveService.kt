@@ -3,38 +3,32 @@ package com.itavgur.omul.schedule.service
 import com.itavgur.omul.schedule.auth.JwtService
 import com.itavgur.omul.schedule.auth.JwtValidated
 import com.itavgur.omul.schedule.dao.timeslot.TimeSlotDao
+import com.itavgur.omul.schedule.dao.web.dto.FreeTimeSlotInfo
+import com.itavgur.omul.schedule.dao.web.dto.ReleaseTimeSlotRequest
+import com.itavgur.omul.schedule.dao.web.dto.ReserveTimeSlotRequest
+import com.itavgur.omul.schedule.domain.TimeSlot
 import com.itavgur.omul.schedule.domain.TimeSlotStatus
 import com.itavgur.omul.schedule.exception.InvalidRequestException
 import com.itavgur.omul.schedule.exception.TimeSlotNotFoundException
 import com.itavgur.omul.schedule.util.logger
-import com.itavgur.omul.schedule.web.dto.*
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
 @Service
 class ReserveService(
-    @Autowired private val timeSlotDao: TimeSlotDao,
-    @Autowired private val personnelService: PersonnelService,
-    @Autowired private val jwtService: JwtService
+    private val timeSlotDao: TimeSlotDao,
+    private val personnelService: PersonnelService,
+    private val jwtService: JwtService
 ) {
 
     companion object {
         val LOG by logger()
     }
 
-    fun getFreeSlots(dateFrom: LocalDateTime?, dateTo: LocalDateTime?, doctorId: Int?): CalendarTimeSlots {
-        val freeTimeSlots = timeSlotDao.getTimeSlotsFiltered(
+    fun getFreeSlots(dateFrom: LocalDateTime?, dateTo: LocalDateTime?, doctorId: Int?): List<TimeSlot> =
+        timeSlotDao.getTimeSlotsFiltered(
             doctorId = doctorId, dateFrom = dateFrom, dateTo = dateTo, status = TimeSlotStatus.FREE
-        ).map {
-            FreeTimeSlotInfo.from(it)
-        }
-
-        freeTimeSlots.forEach {
-            enrichWithPersonnelInfo(it)
-        }
-        return CalendarTimeSlots(doctorId = doctorId, dateFrom = dateFrom, dateTo = dateTo, timeSlots = freeTimeSlots)
-    }
+        )
 
     private fun enrichWithPersonnelInfo(timeSlot: FreeTimeSlotInfo) {
         val personnelInfo = personnelService.getPersonnelInfo(timeSlot.doctorId)
@@ -43,31 +37,19 @@ class ReserveService(
     }
 
     @JwtValidated
-    fun getTimeSlotById(slotId: Long, status: TimeSlotStatus?): TimeSlotResponse {
+    fun getTimeSlotById(slotId: Long, status: TimeSlotStatus?): TimeSlot {
         timeSlotDao.getTimeSlotById(slotId, status)?.let {
 
-            val result = TimeSlotResponse.from(it)
-            enrichWithPersonnelInfo(result)
-
-            if (result.status != TimeSlotStatus.FREE) {
-                jwtService.validateIdWithJwt(result.customerId)
+            if (it.status != TimeSlotStatus.FREE) {
+                jwtService.validateIdWithJwt(it.customerId)
             }
-
-            return result
+            return it
         }
-        throw TimeSlotNotFoundException("timeslot with id $slotId is absent")
-    }
-
-    private fun enrichWithPersonnelInfo(timeSlot: TimeSlotResponse) {
-        timeSlot.doctorId ?: return
-
-        val personnelInfo = personnelService.getPersonnelInfo(timeSlot.doctorId)
-        timeSlot.doctorFullName = personnelInfo.fullName
-        timeSlot.doctorQualification = personnelInfo.qualification
+        throw TimeSlotNotFoundException.throwWithBaseMessage(slotId)
     }
 
     @JwtValidated
-    fun reserveTimeSlot(request: ReserveTimeSlotRequest): TimeSlotResponse {
+    fun reserveTimeSlot(request: ReserveTimeSlotRequest): TimeSlot {
 
         timeSlotDao.getTimeSlotById(request.slotId)?.let {
 
@@ -82,16 +64,13 @@ class ReserveService(
 
             timeSlotDao.patchTimeSlot(request.slotId, it.customerId!!, it.status)
 
-            val result = TimeSlotResponse.from(it)
-            enrichWithPersonnelInfo(result)
-
-            return result
+            return it
         }
-        throw TimeSlotNotFoundException("timeslot with id ${request.slotId} is absent")
+        throw TimeSlotNotFoundException.throwWithBaseMessage(request.slotId)
     }
 
     @JwtValidated
-    fun releaseTimeSlot(request: ReleaseTimeSlotRequest): TimeSlotResponse {
+    fun releaseTimeSlot(request: ReleaseTimeSlotRequest): TimeSlot {
 
         LOG.debug("release slot ${request.slotId}")
 
@@ -109,12 +88,9 @@ class ReserveService(
 
             timeSlotDao.patchTimeSlot(request.slotId, null, it.status)
 
-            val result = TimeSlotResponse.from(it)
-            enrichWithPersonnelInfo(result)
-
-            return result
+            return it
         }
-        throw TimeSlotNotFoundException("timeslot with id ${request.slotId} is absent")
+        throw TimeSlotNotFoundException.throwWithBaseMessage(request.slotId)
     }
 
 }

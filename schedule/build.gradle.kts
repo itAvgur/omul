@@ -1,19 +1,19 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val springVersion = "3.2.2"
+val springVersion = "3.2.3"
 
 plugins {
-    id("org.springframework.boot") version "3.2.2"
+    id("org.springframework.boot") version "3.2.3"
     id("io.spring.dependency-management") version "1.1.4"
     kotlin("jvm") version "1.9.22"
     kotlin("plugin.spring") version "1.9.22"
-    kotlin("plugin.noarg") version "1.9.22"
+    kotlin("plugin.noarg") version "1.9.23"
     id("org.flywaydb.flyway") version "9.22.3"
     idea
 }
 
 group = "com.itavgur.omul"
-version = "0.0.2"
+version = "0.0.3"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -52,13 +52,14 @@ dependencies {
     //tests
     testImplementation("org.springframework.boot:spring-boot-starter-test:$springVersion")
     testImplementation("org.mockito:mockito-core:${project.properties["mockito-core.version"]}")
+    testImplementation("com.tngtech.archunit:archunit-junit5:${project.properties["arch-junit.version"]}")
     //swagger
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${project.properties["springdoc-webmvc.version"]}")
     //security
     implementation("org.springframework.boot:spring-boot-starter-security:$springVersion")
-    implementation("io.jsonwebtoken:jjwt-api:0.12.5")
-    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")
-    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.5")
+    implementation("io.jsonwebtoken:jjwt-api:${project.properties["json-webtoken-libraries.version"]}")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:${project.properties["json-webtoken-libraries.version"]}")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:${project.properties["json-webtoken-libraries.version"]}")
     //validation
     implementation("org.springframework.boot:spring-boot-starter-validation:$springVersion")
     //web
@@ -68,7 +69,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis:$springVersion")
     //transport
     implementation("org.springframework.kafka:spring-kafka:${project.properties["spring-kafka.version"]}")
-
+    //util
+    implementation("org.modelmapper:modelmapper:${project.properties["model-mapper.version"]}")
 }
 
 tasks.withType<KotlinCompile> {
@@ -87,4 +89,8 @@ flyway {
     user = "schedule"
     password = "schedule"
     schemas = arrayOf("schedule")
+}
+
+noArg {
+    annotation("NoArgConstructor")
 }

@@ -5,7 +5,7 @@ import java.sql.ResultSet
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class DBUtil {
+class DBUtil private constructor() {
 
     companion object {
         fun getStringValue(column: String, rs: ResultSet): String? {

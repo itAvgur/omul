@@ -1,7 +1,7 @@
 package com.itavgur.omul.schedule.service.cache
 
-import com.itavgur.omul.schedule.web.dto.CacheManagerRequest
 import com.itavgur.omul.schedule.config.CacheConfig
+import com.itavgur.omul.schedule.dao.web.dto.CacheManagerRequest
 import com.itavgur.omul.schedule.exception.InvalidRequestException
 import com.itavgur.omul.schedule.util.logger
 import jakarta.annotation.PostConstruct

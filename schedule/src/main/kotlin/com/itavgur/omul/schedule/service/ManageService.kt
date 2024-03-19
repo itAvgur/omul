@@ -1,17 +1,15 @@
 package com.itavgur.omul.schedule.service
 
 import com.itavgur.omul.schedule.dao.timeslot.TimeSlotDao
+import com.itavgur.omul.schedule.dao.web.dto.ManageTimeSlotRequest
 import com.itavgur.omul.schedule.domain.TimeSlot
 import com.itavgur.omul.schedule.exception.TimeSlotNotFoundException
-import com.itavgur.omul.schedule.web.dto.ManageTimeSlotRequest
-import com.itavgur.omul.schedule.web.dto.TimeSlotResponse
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
 @Service
 class ManageService(
-    @Autowired private val timeSlotDao: TimeSlotDao
+    private val timeSlotDao: TimeSlotDao
 ) {
 
     fun getSlots(
@@ -19,17 +17,16 @@ class ManageService(
         customerId: Int?,
         dateFrom: LocalDateTime?,
         dateTo: LocalDateTime?
-    ): List<TimeSlotResponse> {
+    ): List<TimeSlot> {
         return timeSlotDao.getTimeSlotsFiltered(doctorId, customerId, dateFrom, dateTo)
-            .map { TimeSlotResponse.from(it) }
     }
 
-    fun getSlotById(slotId: Long): TimeSlotResponse {
+    fun getSlotById(slotId: Long): TimeSlot {
         timeSlotDao.getTimeSlotById(slotId)?.let {
-            return TimeSlotResponse.from(it)
-
+            return it
         }
-        throw TimeSlotNotFoundException("timeslot with id $slotId is absent")
+
+        throw TimeSlotNotFoundException.throwWithBaseMessage(slotId)
     }
 
     fun manageTimeSlot(request: List<ManageTimeSlotRequest>): Int {

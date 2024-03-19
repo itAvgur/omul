@@ -1,4 +1,4 @@
-package com.itavgur.omul.customer.web.dto
+package com.itavgur.omul.schedule.dao.web.handler
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema

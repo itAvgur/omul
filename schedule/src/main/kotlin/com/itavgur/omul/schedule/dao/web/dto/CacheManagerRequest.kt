@@ -1,4 +1,4 @@
-package com.itavgur.omul.schedule.web.dto
+package com.itavgur.omul.schedule.dao.web.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 

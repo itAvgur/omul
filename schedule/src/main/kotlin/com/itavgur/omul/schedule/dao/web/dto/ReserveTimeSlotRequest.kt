@@ -1,4 +1,4 @@
-package com.itavgur.omul.schedule.web.dto
+package com.itavgur.omul.schedule.dao.web.dto
 
 data class ReserveTimeSlotRequest(
 

@@ -1,16 +1,15 @@
 package com.itavgur.omul.schedule.service
 
 import com.itavgur.omul.schedule.auth.JwtService
-import com.itavgur.omul.schedule.dao.personnelDao.PersonnelDao
+import com.itavgur.omul.schedule.dao.personnel.PersonnelDao
 import com.itavgur.omul.schedule.domain.PersonnelInfo
-import com.itavgur.omul.schedule.exception.ExternalCallException
-import org.springframework.beans.factory.annotation.Autowired
+import com.itavgur.omul.schedule.exception.ExternalDaoException
 import org.springframework.stereotype.Service
 
 @Service
 class PersonnelService(
-    @Autowired private val personnelDao: PersonnelDao,
-    @Autowired private val jwtService: JwtService
+    private val personnelDao: PersonnelDao,
+    private val jwtService: JwtService
 ) {
 
     fun getPersonnelInfo(id: Int): PersonnelInfo {
@@ -20,7 +19,7 @@ class PersonnelService(
             ?.let {
                 return it
             }
-        throw ExternalCallException("personnel info with id $id is absent")
+        throw ExternalDaoException("personnel info with id $id is absent")
     }
 
 }

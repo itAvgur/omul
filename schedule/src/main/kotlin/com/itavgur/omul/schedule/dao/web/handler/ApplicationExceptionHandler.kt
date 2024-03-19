@@ -1,8 +1,7 @@
-package com.itavgur.omul.schedule.web.hander
+package com.itavgur.omul.schedule.dao.web.handler
 
-import com.itavgur.omul.customer.web.dto.GeneralErrorResponse
 import com.itavgur.omul.schedule.auth.ForbiddenException
-import com.itavgur.omul.schedule.exception.ExternalCallException
+import com.itavgur.omul.schedule.exception.ExternalDaoException
 import com.itavgur.omul.schedule.exception.InvalidRequestException
 import com.itavgur.omul.schedule.exception.TimeSlotNotFoundException
 import com.itavgur.omul.schedule.util.logger
@@ -66,11 +65,11 @@ class ApplicationExceptionHandler {
         return ResponseEntity(response, HttpStatus.BAD_REQUEST)
     }
 
-    @ExceptionHandler(ExternalCallException::class)
+    @ExceptionHandler(ExternalDaoException::class)
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
     fun handleExternalCallException(
         req: HttpServletRequest,
-        exception: ExternalCallException
+        exception: ExternalDaoException
     ): ResponseEntity<Any> {
         LOG.error("Bad API - ExternalCallException : ${exception.message}")
         val response = GeneralErrorResponse(HttpStatus.BAD_REQUEST.value(), exception.message, null)

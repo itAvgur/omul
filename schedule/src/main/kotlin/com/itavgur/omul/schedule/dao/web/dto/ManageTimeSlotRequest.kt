@@ -1,4 +1,4 @@
-package com.itavgur.omul.schedule.web.dto
+package com.itavgur.omul.schedule.dao.web.dto
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.itavgur.omul.schedule.domain.TimeSlotStatus

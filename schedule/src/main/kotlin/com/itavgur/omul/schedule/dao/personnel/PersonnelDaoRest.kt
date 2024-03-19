@@ -1,4 +1,4 @@
-package com.itavgur.omul.schedule.dao.personnelDao
+package com.itavgur.omul.schedule.dao.personnel
 
 import com.itavgur.omul.schedule.auth.JwtService
 import com.itavgur.omul.schedule.config.TransportPersonnelRestConfig

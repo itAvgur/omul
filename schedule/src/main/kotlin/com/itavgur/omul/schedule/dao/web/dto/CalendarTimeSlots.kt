@@ -1,9 +1,9 @@
-package com.itavgur.omul.schedule.web.dto
+package com.itavgur.omul.schedule.dao.web.dto
 
+import NoArgConstructor
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonInclude.Include
-import com.itavgur.omul.schedule.domain.TimeSlot
 import java.io.Serializable
 import java.time.LocalDateTime
 
@@ -21,6 +21,7 @@ data class CalendarTimeSlots(
 
 ) : Serializable
 
+@NoArgConstructor
 data class FreeTimeSlotInfo(
 
     val slotId: Long,
@@ -32,16 +33,4 @@ data class FreeTimeSlotInfo(
     var doctorFullName: String? = null,
     var doctorQualification: String? = null
 
-) : Serializable {
-    companion object {
-        fun from(timeSlot: TimeSlot): FreeTimeSlotInfo {
-            return FreeTimeSlotInfo(
-                slotId = timeSlot.slotId!!,
-                dateTimeStart = timeSlot.dateTimeStart,
-                dateTimeEnd = timeSlot.dateTimeEnd,
-                doctorId = timeSlot.doctorId
-            )
-
-        }
-    }
-}
+) : Serializable

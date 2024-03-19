@@ -1,12 +1,11 @@
-package com.itavgur.omul.schedule.web
+package com.itavgur.omul.schedule.dao.web
 
-import com.itavgur.omul.schedule.web.dto.CacheManagerRequest
 import com.itavgur.omul.schedule.config.CacheConfig
+import com.itavgur.omul.schedule.dao.web.dto.CacheManagerRequest
 import com.itavgur.omul.schedule.service.cache.CacheManagerService
 import com.itavgur.omul.schedule.service.cache.CacheState
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Schema
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -17,7 +16,7 @@ import org.springframework.web.bind.annotation.*
 @Schema(description = "Cache management controller")
 @ConditionalOnBean(CacheConfig::class)
 class CacheManagerController(
-    @Autowired val cacheManagerService: CacheManagerService
+    val cacheManagerService: CacheManagerService
 ) {
 
     @Operation(
